@@ -68,6 +68,7 @@
         <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
             <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
             <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
+            <button id="play-again-button" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full shadow-lg transition-transform transform active:scale-95">เล่นอีกครั้ง</button>
         </div>
         <div id="dialogue-box" class="dialogue-box"></div>
     </div>
@@ -136,6 +137,7 @@
         let isBossActive = false;
         let dialogueTimeout = null;
         let lastBossFired = 0; // To control boss's bullet firing rate
+        let bossSpawned = false;
 
         function startGame() {
             // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
@@ -203,18 +205,18 @@
             
             // สร้างกลุ่มสำหรับศัตรู
             enemies = this.physics.add.group();
+            // สร้าง event เพื่อสุ่มศัตรูใหม่ทุกๆ 5 วินาที
+            this.time.addEvent({
+                delay: 5000,
+                callback: createRandomEnemy,
+                callbackScope: this,
+                loop: true
+            });
 
             // สร้างกลุ่มสำหรับกระสุนของผู้เล่น
             bullets = this.physics.add.group();
             // สร้างกลุ่มสำหรับกระสุนของบอส
             bossBullets = this.physics.add.group();
-
-            // สร้างศัตรูที่ลาดตระเวนหลายตัว
-            createEnemy(this.scale.width * 0.5, this.scale.height - 100, this.scale.width * 0.4, this.scale.width * 0.6);
-            createEnemy(this.scale.width * 0.7, this.scale.height - 100, this.scale.width * 0.6, this.scale.width * 0.9);
-
-            // สร้างบอส
-            createBoss(this.scale.width * 0.75, this.scale.height - 150);
 
             this.physics.add.collider(enemies, ground);
             this.physics.add.collider(boss, ground);
@@ -289,16 +291,18 @@
             geminiDialogueButton.style.display = 'block';
         }
 
-        // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวน
-        function createEnemy(x, y, minX, maxX) {
-            const enemy = enemies.create(x, y, 'enemy').setScale(0.5);
-            enemy.setCollideWorldBounds(true);
-            enemy.minX = minX;
-            enemy.maxX = maxX;
-            enemy.direction = Phaser.Math.Between(0, 1) ? 1 : -1;
-            enemy.speed = Phaser.Math.Between(50, 120);
-            enemy.setVelocityX(enemy.speed * enemy.direction);
-            return enemy;
+        // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวนแบบสุ่ม
+        function createRandomEnemy() {
+            if (!isBossActive) {
+                const x = Phaser.Math.Between(scene.scale.width * 0.2, scene.scale.width * 0.8);
+                const enemy = enemies.create(x, scene.scale.height - 100, 'enemy').setScale(0.5);
+                enemy.setCollideWorldBounds(true);
+                enemy.minX = x - 100;
+                enemy.maxX = x + 100;
+                enemy.direction = Phaser.Math.Between(0, 1) ? 1 : -1;
+                enemy.speed = Phaser.Math.Between(50, 120);
+                enemy.setVelocityX(enemy.speed * enemy.direction);
+            }
         }
 
         // ฟังก์ชัน update เพื่อรันทุกเฟรม
@@ -337,6 +341,12 @@
                     enemy.setVelocityX(-enemy.speed);
                 }
             });
+
+            // Check if the boss should be spawned
+            if (score >= 100 && !bossSpawned) {
+                createBoss(scene.scale.width * 0.75, scene.scale.height - 150);
+                bossSpawned = true;
+            }
 
             // Boss patrolling and shooting logic
             if (isBossActive && boss) {
@@ -507,6 +517,13 @@
             }
             isBossActive = false;
             geminiDialogueButton.style.display = 'none';
+
+            // Show the "Play Again" button
+            document.getElementById('play-again-button').style.display = 'block';
+            // Add event listener to reload the page
+            document.getElementById('play-again-button').addEventListener('click', () => {
+                window.location.reload();
+            });
         }
         
         // ฟังก์ชัน Gemini API สำหรับสร้างบทพูดของบอส
