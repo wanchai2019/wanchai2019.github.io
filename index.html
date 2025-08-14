@@ -99,10 +99,11 @@
         
         // ฟังก์ชัน preload เพื่อโหลด asset ของเกม
         function preload() {
-            this.load.image('player', 'https://placehold.co/100x100/A0E7E5/fff?text=Player');
-            this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤');
+            // เปลี่ยนรูปภาพ placeholder เป็นภาพสไตล์การ์ตูนสำหรับผู้เล่น, ศัตรู และหัวใจ
+            this.load.image('player', 'https://placehold.co/100x100/A0E7E5/fff?text=😊');
+            this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤️');
             this.load.image('ground', 'https://placehold.co/100x30/28a745/fff?text=Ground');
-            this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=Enemy');
+            this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=👹');
         }
 
         // ฟังก์ชัน create เพื่อตั้งค่าสถานะเริ่มต้นของเกม
