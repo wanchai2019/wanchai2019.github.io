@@ -1,712 +1,451 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>เกมหัวใจกระพริบ</title>
-    <!-- Tailwind CSS for styling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Shooter Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body, html {
-            overscroll-behavior: none;
-            touch-action: manipulation;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: transparent; /* ตั้งค่าให้พื้นหลัง body โปร่งใส */
-        }
         body {
+            background-color: #1a202c;
+            color: #e2e8f0;
             font-family: 'Inter', sans-serif;
-            position: relative;
-        }
-        /* Style for the game canvas container */
-        #phaser-canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1; /* ให้ canvas อยู่ด้านหลัง UI */
-        }
-        /* Phaser canvas settings for transparency */
-        #phaser-canvas-container canvas {
-            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            padding: 1rem;
         }
 
-        /* --- UI and Controls Styling --- */
-        .ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        #game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            background-color: #2d3748;
             padding: 1rem;
-            box-sizing: border-box;
-            z-index: 1; /* ให้ UI อยู่ด้านหน้า canvas */
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 500px;
         }
 
-        .boss-health-bar-container {
-            width: 80%;
-            height: 20px;
-            background-color: #555;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid #333;
-            margin-top: 10px;
-        }
-        .boss-health-bar {
-            height: 100%;
-            background-color: #ff4136;
-            transition: width 0.2s ease-in-out;
-        }
-        .dialogue-box {
-            position: absolute;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 80%;
-            padding: 1rem;
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 2px solid #000;
-            border-radius: 1rem;
-            font-size: 1rem;
-            text-align: center;
-            display: none;
-            z-index: 10;
-        }
-        #controls {
-            display: grid;
-            grid-template-areas: "left jump right" "left shoot right";
-            grid-template-columns: 1fr auto 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
+        canvas {
+            background-color: #4a5568;
+            border-radius: 0.5rem;
+            border: 2px solid #a0aec0;
+            touch-action: none;
             width: 100%;
-            max-width: 600px;
-            padding: 1rem;
-            box-sizing: border-box;
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2; /* ให้ปุ่มควบคุมอยู่ด้านหน้า UI อื่นๆ */
+            height: auto;
         }
-        #left-button { grid-area: left; justify-self: start; align-self: center; }
-        #right-button { grid-area: right; justify-self: end; align-self: center; }
-        #jump-button { grid-area: jump; justify-self: center; align-self: end; }
-        #shoot-button { grid-area: shoot; justify-self: center; align-self: start; }
-        #gemini-dialogue-button-container {
-            grid-area: jump / 1 / shoot / 4;
+
+        #info-panel {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0 0.5rem;
         }
-        .control-button {
-            background-color: #6366F1;
+        
+        #score-display {
+            color: #48bb78;
+        }
+        
+        #lives-display {
+            color: #ef4444;
+        }
+
+        .game-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
             color: white;
-            font-weight: bold;
+            background-image: linear-gradient(to right, #4c51bf, #6b46c1);
+            border: none;
             border-radius: 9999px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-            transform: scale(1);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-button:hover {
+            transform: translateY(-2px);
+            background-image: linear-gradient(to right, #6b46c1, #4c51bf);
+        }
+        
+        #controls-panel {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 60px;
-            height: 60px;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 1rem;
         }
-        .control-button:active {
-            transform: scale(0.95);
-        }
-        #shoot-button {
-            background-color: #EF4444;
-        }
-        #end-game-text {
-            position: absolute;
+
+        #message-box {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            height: auto;
-            max-width: 400px;
-            padding: 2rem;
+            background-color: #2d3748;
+            padding: 2rem 3rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: none;
+            z-index: 10;
             text-align: center;
+            font-size: 1.5rem;
+        }
+
+        #message-box button {
+            margin-top: 1rem;
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900">
-    <div id="phaser-canvas-container"></div>
-    
-    <div class="ui-container">
-        <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 dark:text-white text-center">เกมหัวใจกระพริบ</h1>
-        <div id="score-container" class="text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-300">
-            คะแนน: <span id="score-text">0</span>
+<body>
+    <div id="game-container">
+        <div id="info-panel">
+            <h2 id="score-display" class="text-xl font-bold">Score: 0</h2>
+            <h2 id="lives-display" class="text-xl font-bold">Lives: 3</h2>
         </div>
-        <div id="boss-info" class="hidden flex-col items-center">
-            <span class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">พลังชีวิตบอส</span>
-            <div id="boss-health-bar-container" class="boss-health-bar-container">
-                <div id="boss-health-bar" class="boss-health-bar"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
-        <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
-        <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
-        <button id="play-again-button" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full shadow-lg transition-transform transform active:scale-95">เล่นอีกครั้ง</button>
-    </div>
-    <div id="dialogue-box" class="dialogue-box"></div>
-
-    <!-- On-screen touch controls for mobile -->
-    <div id="controls">
-        <button id="left-button" class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-        </button>
-        <button id="right-button" class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-            </svg>
-        </button>
-        <button id="jump-button" class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-        </button>
-        <button id="shoot-button" class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-        </button>
-        <div id="gemini-dialogue-button-container">
-            <button id="gemini-dialogue-button" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform transform active:scale-95 text-xs sm:text-sm">
-                ✨ ท้าทายบอส
-            </button>
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls-panel">
+            <button id="startButton" class="game-button">เริ่มเกม</button>
+            <button id="shootButton" class="game-button hidden">ยิง!</button>
         </div>
     </div>
 
-    <!-- Phaser Library -->
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.js"></script>
+    <!-- The message box for "Game Over" and "Play Again" -->
+    <div id="message-box">
+        <h2 class="text-3xl font-bold mb-4">เกมจบแล้ว</h2>
+        <p id="message-text"></p>
+        <button id="message-button" class="game-button">เล่นอีกครั้ง</button>
+    </div>
 
-    <!-- Game logic script -->
     <script>
-        // Global variables for the game
-        let player;
-        let cursors;
-        let playerHP = 3;
-        let hearts = [];
-        let scene;
-        let enemies;
-        let bullets; // Group for player's bullets
-        let bossBullets; // Group for boss's bullets
+        // Get canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const shootButton = document.getElementById('shootButton');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const messageButton = document.getElementById('message-button');
+
+        // Game state variables
+        let gameActive = false;
+        let animationFrameId;
         let score = 0;
-        let scoreText;
-        let lastPlayerFired = 0; // To control player's bullet firing rate
-        let enemySpawnTimer; // Timer for spawning enemies
+        let lives = 3;
+        let obstacleSpawnInterval;
 
-        // Boss-related variables
-        let boss;
-        let bossHP = 50;
-        let maxBossHP = 50;
-        let bossHealthBar;
-        let bossInfoContainer;
-        let geminiDialogueButton;
-        let dialogueBox;
-        let isBossActive = false;
-        let dialogueTimeout = null;
-        let lastBossFired = 0; // To control boss's bullet firing rate
-        let bossSpawned = false;
-        let gameInstance;
+        // Player properties
+        const player = {
+            x: 0,
+            y: 0,
+            width: 20,
+            height: 20,
+            speed: 5,
+            color: '#4299e1'
+        };
 
-        function startGame() {
-            // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
-            const config = {
-                type: Phaser.AUTO,
-                scale: {
-                    mode: Phaser.Scale.FIT,
-                    parent: 'phaser-canvas-container',
-                    autoCenter: Phaser.Scale.CENTER_BOTH,
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                },
-                // ตั้งค่าพื้นหลังเป็น null เพื่อให้โปร่งใส
-                backgroundColor: null,
-                transparent: true, // ทำให้พื้นหลังโปร่งใส
-                // ตั้งค่า Arcade Physics สำหรับเกม
-                physics: {
-                    default: 'arcade',
-                    arcade: {
-                        gravity: { y: 300 },
-                        debug: false
-                    }
-                },
-                // กำหนด scenes สำหรับเกม
-                scene: {
-                    preload: preload,
-                    create: create,
-                    update: update
-                }
-            };
-            gameInstance = new Phaser.Game(config);
-        }
-        
-        // ฟังก์ชัน preload เพื่อโหลด asset ของเกม
-        function preload() {
-            // เปลี่ยนรูปภาพ placeholder เป็นภาพสไตล์การ์ตูนสำหรับผู้เล่น, ศัตรู, กระสุน และหัวใจ
-            this.load.image('player', 'https://placehold.co/100x100/A0E7E5/fff?text=😊');
-            this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤️');
-            this.load.image('ground', 'https://placehold.co/100x30/28a745/fff?text=Ground');
-            this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=👹');
-            this.load.image('player_bullet', 'https://placehold.co/20x20/FFD966/000?text=✨');
-            this.load.image('boss', 'https://placehold.co/200x200/B22222/fff?text=BOSS');
-            this.load.image('boss_bullet', 'https://placehold.co/20x20/3A0CA3/fff?text=💀');
-        }
+        // Bullet properties
+        let bullets = [];
+        const bulletProperties = {
+            width: 4,
+            height: 10,
+            speed: 7,
+            color: '#a0aec0'
+        };
 
-        // ฟังก์ชัน create เพื่อตั้งค่าสถานะเริ่มต้นของเกม
-        function create() {
-            scene = this;
-            
-            // Get references to HTML elements
-            bossInfoContainer = document.getElementById('boss-info');
-            bossHealthBar = document.getElementById('boss-health-bar');
-            geminiDialogueButton = document.getElementById('gemini-dialogue-button');
-            dialogueBox = document.getElementById('dialogue-box');
+        // Obstacle properties
+        let obstacles = [];
+        const obstacleProperties = {
+            width: 20,
+            height: 20,
+            speed: 2,
+            color: '#e53e3e'
+        };
 
-            // Create a static ground platform at the bottom of the screen
-            const groundHeight = 30;
-            const ground = this.physics.add.staticGroup();
-            ground.create(this.scale.width / 2, this.scale.height - groundHeight / 2, 'ground')
-                  .setScale(this.scale.width / 50, 1)
-                  .refreshBody();
+        // Player movement
+        let rightPressed = false;
+        let leftPressed = false;
 
-            // สร้างสไปรท์ผู้เล่น
-            player = this.physics.add.sprite(this.scale.width / 4, this.scale.height - 100, 'player').setScale(0.5);
-            player.setCollideWorldBounds(true);
-            this.physics.add.collider(player, ground);
-            
-            // สร้างกลุ่มสำหรับศัตรู
-            enemies = this.physics.add.group();
-            // สร้าง event เพื่อสุ่มศัตรูใหม่ทุกๆ 5 วินาที
-            enemySpawnTimer = this.time.addEvent({
-                delay: 5000,
-                callback: createRandomEnemy,
-                callbackScope: this,
-                loop: true
-            });
+        // Event listeners for keyboard input (for desktop use)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                rightPressed = true;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                leftPressed = true;
+            } else if (e.key === ' ' && gameActive) { // Spacebar to shoot
+                shoot();
+            }
+        });
 
-            // สร้างกลุ่มสำหรับกระสุนของผู้เล่น
-            bullets = this.physics.add.group();
-            // สร้างกลุ่มสำหรับกระสุนของบอส
-            bossBullets = this.physics.add.group();
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                rightPressed = false;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                leftPressed = false;
+            }
+        });
 
-            this.physics.add.collider(enemies, ground);
-            this.physics.add.overlap(player, enemies, handlePlayerEnemyCollision, null, this);
-            
-            // This is a bug fix: the boss collision must be added after the boss is created
-            // The overlap for the boss will be set up in createBoss()
-            
-            // ตรวจจับการชนกันระหว่างกระสุนของผู้เล่นกับศัตรู
-            this.physics.add.overlap(bullets, enemies, handleBulletEnemyCollision, null, this);
-            
-            // ตรวจจับการชนกันระหว่างกระสุนของบอสกับผู้เล่น
-            this.physics.add.overlap(player, bossBullets, handlePlayerBossBulletCollision, null, this);
-            this.physics.add.collider(bossBullets, ground, (bullet) => {
-                bullet.disableBody(true, true);
-            });
+        // Touch event listeners for mobile devices
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', handleTouchEnd);
 
-            // สร้างตัวฟังการป้อนข้อมูลจากแป้นพิมพ์
-            cursors = this.input.keyboard.createCursorKeys();
-            
-            // Initial score text
-            scoreText = this.add.text(16, 16, 'คะแนน: 0', { fontSize: '20px', fill: '#fff' }).setScrollFactor(0);
+        let touchStartX = 0;
+        let touchCurrentX = 0;
 
-            // Initialize and display player hearts
-            updateHearts();
-
-            // Mobile controls
-            const leftButton = document.getElementById('left-button');
-            const rightButton = document.getElementById('right-button');
-            const jumpButton = document.getElementById('jump-button');
-            const shootButton = document.getElementById('shoot-button');
-
-            // Using pointerdown/up for better touch responsiveness
-            leftButton.addEventListener('pointerdown', (e) => { e.preventDefault(); player.isMovingLeft = true; });
-            leftButton.addEventListener('pointerup', () => player.isMovingLeft = false);
-            leftButton.addEventListener('pointerleave', () => player.isMovingLeft = false);
-
-            rightButton.addEventListener('pointerdown', (e) => { e.preventDefault(); player.isMovingRight = true; });
-            rightButton.addEventListener('pointerup', () => player.isMovingRight = false);
-            rightButton.addEventListener('pointerleave', () => player.isMovingRight = false);
-
-            jumpButton.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                if (player.body.touching.down) {
-                    player.setVelocityY(-330);
-                }
-            });
-            // Shoot button listener with cooldown
-            shootButton.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                if (scene.time.now > lastPlayerFired + 500) {
-                    shootBullet();
-                    lastPlayerFired = scene.time.now;
-                }
-            });
-
-            // Gemini API button listener
-            geminiDialogueButton.addEventListener('click', () => {
-                if (isBossActive) {
-                    generateBossDialogue();
-                }
-            });
-            
-            // Handle window resize to re-scale the game
-            window.addEventListener('resize', () => {
-                gameInstance.scale.resize(window.innerWidth, window.innerHeight);
-                // Reposition the ground and other elements if needed
-                const ground = scene.physics.world.staticGroup.getChildren()[0];
-                if (ground) {
-                    ground.setPosition(scene.scale.width / 2, scene.scale.height - groundHeight / 2).setScale(scene.scale.width / 50, 1).refreshBody();
-                }
-            });
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
         }
 
-        // ฟังก์ชันสำหรับสร้างบอส
-        function createBoss(x, y) {
-            isBossActive = true;
-            boss = scene.physics.add.sprite(x, y, 'boss').setScale(0.8);
-            boss.setCollideWorldBounds(true);
-            boss.setBounce(0.2); // Boss will bounce slightly
-            boss.minX = scene.scale.width * 0.6;
-            boss.maxX = scene.scale.width * 0.9;
-            boss.direction = -1;
-            boss.speed = 80;
-            boss.setVelocityX(boss.speed * boss.direction);
-            
-            // Add collisions for the boss after it's created
-            scene.physics.add.collider(boss, scene.physics.world.staticGroup);
-            scene.physics.add.overlap(player, boss, handlePlayerBossCollision, null, scene);
-            scene.physics.add.overlap(bullets, boss, handleBulletBossCollision, null, scene);
+        function handleTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchCurrentX = touch.clientX;
 
-            // Show the boss health bar and Gemini button
-            bossInfoContainer.style.display = 'flex';
-            geminiDialogueButton.style.display = 'block';
-        }
-
-        // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวนแบบสุ่ม
-        function createRandomEnemy() {
-            if (!isBossActive) {
-                const x = Phaser.Math.Between(scene.scale.width * 0.2, scene.scale.width * 0.8);
-                const enemy = enemies.create(x, scene.scale.height - 100, 'enemy').setScale(0.5);
-                enemy.setCollideWorldBounds(true);
-                enemy.minX = x - 100;
-                enemy.maxX = x + 100;
-                enemy.direction = Phaser.Math.Between(0, 1) ? 1 : -1;
-                enemy.speed = Phaser.Math.Between(50, 120);
-                enemy.setVelocityX(enemy.speed * enemy.direction);
+            const moveDistance = touchCurrentX - touchStartX;
+            if (moveDistance > 10) {
+                rightPressed = true;
+                leftPressed = false;
+            } else if (moveDistance < -10) {
+                leftPressed = true;
+                rightPressed = false;
+            } else {
+                leftPressed = false;
+                rightPressed = false;
             }
         }
 
-        // ฟังก์ชัน update เพื่อรันทุกเฟรม
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            leftPressed = false;
+            rightPressed = false;
+        }
+
+        // Initialize the game state
+        function initGame() {
+            // Reset player position based on new canvas size
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - 30;
+
+            // Clear existing obstacles and bullets
+            obstacles = [];
+            bullets = [];
+            score = 0;
+            lives = 3;
+            scoreDisplay.textContent = `Score: ${score}`;
+            livesDisplay.textContent = `Lives: ${lives}`;
+        }
+
+        // Draw the player
+        function drawPlayer() {
+            ctx.beginPath();
+            ctx.rect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Draw the obstacles
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                ctx.beginPath();
+                ctx.rect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                ctx.fillStyle = obstacle.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+        
+        // Draw the bullets
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.rect(bullet.x, bullet.y, bullet.width, bullet.height);
+                ctx.fillStyle = bullet.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        // Create a new bullet
+        function shoot() {
+            if (!gameActive) return;
+            bullets.push({
+                x: player.x + player.width / 2 - bulletProperties.width / 2,
+                y: player.y,
+                width: bulletProperties.width,
+                height: bulletProperties.height,
+                speed: bulletProperties.speed,
+                color: bulletProperties.color
+            });
+        }
+        
+        // Check for collisions between player and obstacles
+        function checkPlayerCollision() {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obs = obstacles[i];
+                if (
+                    player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y
+                ) {
+                    // Collision detected
+                    lives--;
+                    livesDisplay.textContent = `Lives: ${lives}`;
+                    if (lives > 0) {
+                        // Reset player position and clear obstacles, but continue game
+                        obstacles = [];
+                        player.x = canvas.width / 2 - player.width / 2;
+                        player.y = canvas.height - 30;
+                    } else {
+                        endGame();
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Check for collisions between bullets and obstacles
+        function checkBulletCollision() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                for (let j = obstacles.length - 1; j >= 0; j--) {
+                    const obs = obstacles[j];
+                    if (
+                        bullet.x < obs.x + obs.width &&
+                        bullet.x + bullet.width > obs.x &&
+                        bullet.y < obs.y + obs.height &&
+                        bullet.y + bullet.height > obs.y
+                    ) {
+                        // Collision detected, remove both and increase score
+                        bullets.splice(i, 1);
+                        obstacles.splice(j, 1);
+                        score += 100; // Increase score for hitting an obstacle
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        return; // Exit inner loop to prevent errors with modified array
+                    }
+                }
+            }
+        }
+
+        // Game loop
         function update() {
-            // Player movement control from keyboard
-            if (cursors.left.isDown) {
-                player.setVelocityX(-160);
-            } else if (cursors.right.isDown) {
-                player.setVelocityX(160);
-            } else if (!player.isMovingLeft && !player.isMovingRight) {
-                player.setVelocityX(0);
+            if (!gameActive) return;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw game elements
+            drawPlayer();
+            drawObstacles();
+            drawBullets();
+
+            // Update player position
+            if (rightPressed && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            } else if (leftPressed && player.x > 0) {
+                player.x -= player.speed;
             }
+
+            // Update obstacle positions
+            obstacles.forEach(obstacle => {
+                obstacle.y += obstacle.speed;
+            });
             
-            // Player movement control from touch
-            if (player.isMovingLeft) {
-                player.setVelocityX(-160);
-            } else if (player.isMovingRight) {
-                player.setVelocityX(160);
-            }
-
-            // Player jump control from keyboard
-            if (cursors.up.isDown && player.body.touching.down) {
-                player.setVelocityY(-330);
-            }
-
-            // Enemy patrolling logic
-            enemies.children.iterate(enemy => {
-                if (enemy.x <= enemy.minX && enemy.direction === -1) {
-                    enemy.direction = 1;
-                    enemy.speed = Phaser.Math.Between(50, 120);
-                    enemy.setVelocityX(enemy.speed);
-                }
-                if (enemy.x >= enemy.maxX && enemy.direction === 1) {
-                    enemy.direction = -1;
-                    enemy.speed = Phaser.Math.Between(50, 120);
-                    enemy.setVelocityX(-enemy.speed);
-                }
+            // Update bullet positions and remove off-screen bullets
+            bullets = bullets.filter(bullet => bullet.y > 0);
+            bullets.forEach(bullet => {
+                bullet.y -= bullet.speed;
             });
 
-            // Check if the boss should be spawned
-            if (score >= 100 && !bossSpawned) {
-                createBoss(scene.scale.width * 0.75, scene.scale.height - 150);
-                bossSpawned = true;
-            }
-
-            // Boss patrolling and shooting logic
-            if (isBossActive && boss) {
-                if (boss.x <= boss.minX && boss.direction === -1) {
-                    boss.direction = 1;
-                    boss.setVelocityX(boss.speed);
-                }
-                if (boss.x >= boss.maxX && boss.direction === 1) {
-                    boss.direction = -1;
-                    boss.setVelocityX(-boss.speed);
-                }
-
-                // Boss shoots at the player every 2 seconds
-                if (scene.time.now > lastBossFired + 2000) {
-                    bossShoot();
-                    lastBossFired = scene.time.now;
-                }
-            }
-        }
-        
-        // ฟังก์ชันสำหรับยิงกระสุนของผู้เล่น
-        function shootBullet() {
-            const bullet = bullets.get(player.x, player.y, 'player_bullet');
-            if (bullet) {
-                bullet.setActive(true);
-                bullet.setVisible(true);
-                bullet.body.allowGravity = false;
-                bullet.setVelocityX(400); // Speed of the bullet
-            }
-        }
-
-        // ฟังก์ชันสำหรับบอสยิงกระสุน
-        function bossShoot() {
-            if (boss) {
-                const bullet = bossBullets.get(boss.x, boss.y, 'boss_bullet');
-                if (bullet) {
-                    bullet.setActive(true);
-                    bullet.setVisible(true);
-                    bullet.body.allowGravity = false;
-
-                    // Calculate velocity to shoot towards the player
-                    scene.physics.moveToObject(bullet, player, 200);
-                }
-            }
-        }
-
-        // จัดการการชนกันระหว่างผู้เล่นและศัตรู
-        function handlePlayerEnemyCollision(player, enemy) {
-            if (!player.invincible) {
-                loseHP();
-                player.invincible = true;
-                scene.tweens.add({
-                    targets: player,
-                    alpha: { from: 1, to: 0.2 },
-                    yoyo: true,
-                    repeat: 5,
-                    duration: 100,
-                    onComplete: () => {
-                        player.alpha = 1;
-                        player.invincible = false;
-                    }
-                });
-            }
-        }
-
-        // จัดการการชนกันระหว่างผู้เล่นและบอส
-        function handlePlayerBossCollision(player, boss) {
-            if (!player.invincible) {
-                loseHP();
-                player.invincible = true;
-                scene.tweens.add({
-                    targets: player,
-                    alpha: { from: 1, to: 0.2 },
-                    yoyo: true,
-                    repeat: 5,
-                    duration: 100,
-                    onComplete: () => {
-                        player.alpha = 1;
-                        player.invincible = false;
-                    }
-                });
-            }
-        }
-
-        // จัดการการชนกันระหว่างกระสุนของผู้เล่นและศัตรู
-        function handleBulletEnemyCollision(bullet, enemy) {
-            bullet.disableBody(true, true);
-            enemy.disableBody(true, true);
-            score += 10;
-            scoreText.setText('คะแนน: ' + score);
-        }
-
-        // จัดการการชนกันระหว่างกระสุนของผู้เล่นและบอส
-        function handleBulletBossCollision(bullet, boss) {
-            bullet.disableBody(true, true);
-            bossHP -= 1;
-            bossHealthBar.style.width = (bossHP / maxBossHP) * 100 + '%';
-
-            if (bossHP <= 0) {
-                boss.disableBody(true, true);
-                winGame();
-            }
-        }
-
-        // จัดการการชนกันระหว่างกระสุนของบอสและผู้เล่น
-        function handlePlayerBossBulletCollision(player, bullet) {
-            bullet.disableBody(true, true);
-            if (!player.invincible) {
-                loseHP();
-                player.invincible = true;
-                scene.tweens.add({
-                    targets: player,
-                    alpha: { from: 1, to: 0.2 },
-                    yoyo: true,
-                    repeat: 5,
-                    duration: 100,
-                    onComplete: () => {
-                        player.alpha = 1;
-                        player.invincible = false;
-                    }
-                });
-            }
-        }
-
-        // ฟังก์ชันเพื่ออัปเดตการแสดงผลหัวใจ
-        function updateHearts() {
-            hearts.forEach(h => h.destroy());
-            hearts = [];
-            for (let i = 0; i < playerHP; i++) {
-                const heart = scene.add.image(30 + i * 40, 50, 'heart')
-                    .setScrollFactor(0)
-                    .setScale(0.5)
-                    .setOrigin(0, 0);
-                hearts.push(heart);
-            }
-        }
-
-        // ฟังก์ชันเพื่อลด HP ของผู้เล่น
-        function loseHP() {
-            if (playerHP > 0) {
-                playerHP--;
-                updateHearts();
-                if (playerHP <= 0) {
-                    loseGame();
-                }
-            }
-        }
-
-        // ฟังก์ชันสำหรับจัดการสถานะ Game Over
-        function loseGame() {
-            endGame('GAME OVER');
-        }
-
-        // ฟังก์ชันสำหรับจัดการสถานะ Game Win
-        function winGame() {
-            endGame('YOU WIN!');
-        }
-
-        // ฟังก์ชันหลักสำหรับจบเกม
-        function endGame(title) {
-            console.log('Game has ended. Displaying end screen.');
-            
-            // Stop all game timers and physics
-            scene.physics.pause();
-            scene.time.removeAllEvents();
-            
-            document.getElementById('end-game-text').style.display = 'flex';
-            document.getElementById('end-game-title').textContent = title;
-            document.getElementById('final-score').textContent = 'คะแนนสุดท้าย: ' + score;
-            
-            // Hide controls on game over
-            document.getElementById('controls').style.display = 'none';
-
-            // Check if player and boss exist before trying to access them
-            if (player) {
-                player.setTint(0xff0000);
-                player.setVelocity(0, 0);
-                player.anims.stop();
-                player.body.enable = false;
+            // Check for game conditions
+            checkBulletCollision();
+            if (checkPlayerCollision()) {
+                return;
             }
             
-            if (boss) {
-                boss.setVelocity(0,0);
-                boss.anims.stop();
-                boss.body.enable = false;
-            }
-            
-            isBossActive = false;
-            geminiDialogueButton.style.display = 'none';
+            // Increment score over time
+            score += 1;
+            scoreDisplay.textContent = `Score: ${score}`;
 
-            // Show the "Play Again" button and add event listener
-            document.getElementById('play-again-button').style.display = 'block';
-            document.getElementById('play-again-button').addEventListener('click', () => {
-                window.location.reload();
-            });
-        }
-        
-        // ฟังก์ชัน Gemini API สำหรับสร้างบทพูดของบอส
-        async function generateBossDialogue() {
-            geminiDialogueButton.disabled = true;
-            geminiDialogueButton.textContent = '...กำลังคิดอยู่';
-            
-            // Clear any previous dialogue timeout
-            if (dialogueTimeout) {
-                clearTimeout(dialogueTimeout);
-            }
-
-            try {
-                const prompt = "คุณคือบอสในวิดีโอเกมสไตล์ย้อนยุค ตอบกลับผู้เล่นด้วยคำพูดเยาะเย้ยสั้นๆ หนึ่งประโยคเพื่อท้าทายเขา ยกตัวอย่างเช่น 'เจ้าไม่มีทางเอาชนะข้าได้หรอก!' หรือ 'พลังของเจ้ามันกระจอกเกินไป!'. ตอบเป็นภาษาไทยเท่านั้น.";
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiKey = ""
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    dialogueBox.textContent = text;
-                    dialogueBox.style.display = 'block';
-
-                    // Hide the dialogue box after a few seconds
-                    dialogueTimeout = setTimeout(() => {
-                        dialogueBox.style.display = 'none';
-                    }, 5000);
-                } else {
-                    dialogueBox.textContent = "บอส: ข้าไม่มีอะไรจะพูดกับเจ้าในตอนนี้!";
-                    dialogueBox.style.display = 'block';
-                }
-            } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                dialogueBox.textContent = "บอส: ข้ากำลังยุ่งอยู่! ไปให้พ้น!";
-                dialogueBox.style.display = 'block';
-            } finally {
-                geminiDialogueButton.disabled = false;
-                geminiDialogueButton.textContent = '✨ ท้าทายบอส';
-            }
+            // Loop the animation
+            animationFrameId = requestAnimationFrame(update);
         }
 
+        // End the game and display message
+        function endGame() {
+            gameActive = false;
+            clearInterval(obstacleSpawnInterval);
+            cancelAnimationFrame(animationFrameId);
+            messageBox.style.display = 'block';
 
-        // Poll for the Phaser object before starting the game
-        const checkPhaser = setInterval(() => {
-            if (window.Phaser) {
-                clearInterval(checkPhaser);
+            // Update the message text to show the final score
+            messageText.textContent = `คุณทำคะแนนได้ ${score} คะแนน`;
+            
+            // The message button is already set to "เล่นอีกครั้ง"
+            messageButton.onclick = () => {
+                messageBox.style.display = 'none';
+                initGame();
                 startGame();
+            };
+        }
+
+        // Start the game
+        function startGame() {
+            startButton.classList.add('hidden');
+            shootButton.classList.remove('hidden');
+            gameActive = true;
+            // Spawn obstacles at a regular interval
+            obstacleSpawnInterval = setInterval(() => {
+                obstacles.push({
+                    x: Math.random() * (canvas.width - 20),
+                    y: -20,
+                    width: obstacleProperties.width,
+                    height: obstacleProperties.height,
+                    speed: obstacleProperties.speed,
+                    color: obstacleProperties.color
+                });
+            }, 1000); // Spawn a new obstacle every 1 second
+            update();
+        }
+        
+        // Function to set canvas size and reset game on window resize
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.8, 500);
+            canvas.width = size;
+            canvas.height = size;
+            initGame();
+            if (!gameActive) {
+                drawPlayer();
             }
-        }, 10);
+        }
+
+        // Event listener for the start button
+        startButton.addEventListener('click', () => {
+            initGame();
+            startGame();
+        });
+
+        // Event listener for the shoot button
+        shootButton.addEventListener('click', shoot);
+
+        // Initial setup
+        window.onload = function () {
+            resizeCanvas();
+        }
+
+        // Listen for window resize events to keep the game responsive
+        window.addEventListener('resize', resizeCanvas);
     </script>
 </body>
 </html>
