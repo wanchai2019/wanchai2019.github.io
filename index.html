@@ -82,19 +82,59 @@
             margin-top: 1rem;
         }
 
-        #direction-controls {
-            display: grid;
-            grid-template-areas:
-                ". up ."
-                "left down right";
-            grid-gap: 8px;
+        /* Styling for the new circular control pad */
+        #direction-controls-circle {
+            position: relative;
             width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #4a5568;
+            border: 2px solid #a0aec0;
+            margin-bottom: 1rem;
+        }
+
+        .game-arrow-button {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #2d3748;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         
-        #upButton { grid-area: up; }
-        #downButton { grid-area: down; }
-        #leftButton { grid-area: left; }
-        #rightButton { grid-area: right; }
+        .game-arrow-button:active {
+            background-color: #1a202c;
+        }
+
+        #upButton {
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #downButton {
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #leftButton {
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #rightButton {
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        /* End new button styling */
 
         #message-box {
             position: fixed;
@@ -130,11 +170,12 @@
         <button id="startButton" class="game-button">เริ่มเกม</button>
         <!-- Directional controls, hidden initially -->
         <div id="game-controls" class="hidden">
-            <div id="direction-controls">
-                <button id="upButton" class="game-button">ขึ้น</button>
-                <button id="leftButton" class="game-button">ซ้าย</button>
-                <button id="downButton" class="game-button">ลง</button>
-                <button id="rightButton" class="game-button">ขวา</button>
+            <!-- New circular direction control pad -->
+            <div id="direction-controls-circle">
+                <button id="upButton" class="game-arrow-button">▲</button>
+                <button id="leftButton" class="game-arrow-button">◀</button>
+                <button id="downButton" class="game-arrow-button">▼</button>
+                <button id="rightButton" class="game-arrow-button">▶</button>
             </div>
             <!-- Shoot button -->
             <button id="shootButton" class="game-button mt-4">ยิง!</button>
@@ -169,7 +210,7 @@
         let gameActive = false;
         let animationFrameId;
         let score = 0;
-        let lives = 3;
+        let lives = 3; // Initial number of lives
         let obstacleSpawnInterval;
 
         // Player properties
