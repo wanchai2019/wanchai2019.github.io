@@ -125,6 +125,7 @@
         let score = 0;
         let scoreText;
         let lastPlayerFired = 0; // To control player's bullet firing rate
+        let enemySpawnTimer; // Timer for spawning enemies
 
         // Boss-related variables
         let boss;
@@ -206,7 +207,7 @@
             // สร้างกลุ่มสำหรับศัตรู
             enemies = this.physics.add.group();
             // สร้าง event เพื่อสุ่มศัตรูใหม่ทุกๆ 5 วินาที
-            this.time.addEvent({
+            enemySpawnTimer = this.time.addEvent({
                 delay: 5000,
                 callback: createRandomEnemy,
                 callbackScope: this,
@@ -219,13 +220,13 @@
             bossBullets = this.physics.add.group();
 
             this.physics.add.collider(enemies, ground);
-            this.physics.add.collider(boss, ground);
             this.physics.add.overlap(player, enemies, handlePlayerEnemyCollision, null, this);
-            this.physics.add.overlap(player, boss, handlePlayerBossCollision, null, this);
+            
+            // This is a bug fix: the boss collision must be added after the boss is created
+            // The overlap for the boss will be set up in createBoss()
             
             // ตรวจจับการชนกันระหว่างกระสุนของผู้เล่นกับศัตรู
             this.physics.add.overlap(bullets, enemies, handleBulletEnemyCollision, null, this);
-            this.physics.add.overlap(bullets, boss, handleBulletBossCollision, null, this);
             
             // ตรวจจับการชนกันระหว่างกระสุนของบอสกับผู้เล่น
             this.physics.add.overlap(player, bossBullets, handlePlayerBossBulletCollision, null, this);
@@ -286,6 +287,11 @@
             boss.speed = 80;
             boss.setVelocityX(boss.speed * boss.direction);
             
+            // Add collisions for the boss after it's created
+            scene.physics.add.collider(boss, scene.physics.world.staticGroup);
+            scene.physics.add.overlap(player, boss, handlePlayerBossCollision, null, scene);
+            scene.physics.add.overlap(bullets, boss, handleBulletBossCollision, null, scene);
+
             // Show the boss health bar and Gemini button
             bossInfoContainer.style.display = 'flex';
             geminiDialogueButton.style.display = 'block';
@@ -380,14 +386,16 @@
 
         // ฟังก์ชันสำหรับบอสยิงกระสุน
         function bossShoot() {
-            const bullet = bossBullets.get(boss.x, boss.y, 'boss_bullet');
-            if (bullet) {
-                bullet.setActive(true);
-                bullet.setVisible(true);
-                bullet.body.allowGravity = false;
+            if (boss) {
+                const bullet = bossBullets.get(boss.x, boss.y, 'boss_bullet');
+                if (bullet) {
+                    bullet.setActive(true);
+                    bullet.setVisible(true);
+                    bullet.body.allowGravity = false;
 
-                // Calculate velocity to shoot towards the player
-                scene.physics.moveToObject(bullet, player, 200);
+                    // Calculate velocity to shoot towards the player
+                    scene.physics.moveToObject(bullet, player, 200);
+                }
             }
         }
 
@@ -505,6 +513,12 @@
 
         // ฟังก์ชันหลักสำหรับจบเกม
         function endGame(title) {
+            console.log('Game has ended. Displaying end screen.');
+            
+            // Stop all game timers and physics
+            scene.physics.pause();
+            scene.time.removeAllEvents();
+            
             document.getElementById('end-game-text').style.display = 'flex';
             document.getElementById('end-game-title').textContent = title;
             document.getElementById('final-score').textContent = 'คะแนนสุดท้าย: ' + score;
@@ -512,15 +526,19 @@
             player.setVelocity(0, 0);
             player.anims.stop();
             player.body.enable = false;
+            
+            // Check if boss exists before trying to access it
             if (boss) {
                 boss.setVelocity(0,0);
+                boss.anims.stop();
+                boss.body.enable = false;
             }
+            
             isBossActive = false;
             geminiDialogueButton.style.display = 'none';
 
-            // Show the "Play Again" button
+            // Show the "Play Again" button and add event listener
             document.getElementById('play-again-button').style.display = 'block';
-            // Add event listener to reload the page
             document.getElementById('play-again-button').addEventListener('click', () => {
                 window.location.reload();
             });
