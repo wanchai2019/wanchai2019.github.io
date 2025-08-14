@@ -82,7 +82,6 @@
             margin-top: 1rem;
         }
 
-        /* Styling for the new circular control pad */
         #direction-controls-circle {
             position: relative;
             width: 150px;
@@ -134,7 +133,6 @@
             top: 50%;
             transform: translateY(-50%);
         }
-        /* End new button styling */
 
         #message-box {
             position: fixed;
@@ -165,24 +163,19 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <!-- Container for all game controls -->
     <div id="controls-container">
         <button id="startButton" class="game-button">เริ่มเกม</button>
-        <!-- Directional controls, hidden initially -->
         <div id="game-controls" class="hidden">
-            <!-- New circular direction control pad -->
             <div id="direction-controls-circle">
                 <button id="upButton" class="game-arrow-button">▲</button>
                 <button id="leftButton" class="game-arrow-button">◀</button>
                 <button id="downButton" class="game-arrow-button">▼</button>
                 <button id="rightButton" class="game-arrow-button">▶</button>
             </div>
-            <!-- Shoot button -->
             <button id="shootButton" class="game-button mt-4">ยิง!</button>
         </div>
     </div>
 
-    <!-- The message box for "Game Over" and "Play Again" -->
     <div id="message-box">
         <h2 class="text-3xl font-bold mb-4">เกมจบแล้ว</h2>
         <p id="message-text"></p>
@@ -190,7 +183,6 @@
     </div>
 
     <script>
-        // Get canvas and context
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startButton = document.getElementById('startButton');
@@ -206,14 +198,12 @@
         const messageText = document.getElementById('message-text');
         const messageButton = document.getElementById('message-button');
 
-        // Game state variables
         let gameActive = false;
         let animationFrameId;
         let score = 0;
-        let lives = 3; // Initial number of lives
+        let lives = 3; 
         let obstacleSpawnInterval;
 
-        // Player properties
         const player = {
             x: 0,
             y: 0,
@@ -224,7 +214,6 @@
         };
         let PLAYER_MAX_Y = 0;
 
-        // Bullet properties
         let bullets = [];
         const bulletProperties = {
             width: 4,
@@ -233,7 +222,6 @@
             color: '#a0aec0'
         };
 
-        // Obstacle properties
         let obstacles = [];
         const obstacleProperties = {
             width: 20,
@@ -242,13 +230,11 @@
             color: '#e53e3e'
         };
 
-        // Player movement state
         let rightPressed = false;
         let leftPressed = false;
         let upPressed = false;
         let downPressed = false;
 
-        // Event listeners for keyboard input (for desktop use)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Right' || e.key === 'ArrowRight') {
                 rightPressed = true;
@@ -275,7 +261,6 @@
             }
         });
 
-        // Event listeners for buttons
         upButton.addEventListener('mousedown', () => upPressed = true);
         upButton.addEventListener('mouseup', () => upPressed = false);
         upButton.addEventListener('touchstart', (e) => { e.preventDefault(); upPressed = true; });
@@ -298,7 +283,6 @@
 
         shootButton.addEventListener('click', shoot);
 
-        // Touch event listeners for mobile devices on the canvas
         canvas.addEventListener('touchstart', handleTouchStart);
         canvas.addEventListener('touchmove', handleTouchMove);
         canvas.addEventListener('touchend', handleTouchEnd);
@@ -320,7 +304,6 @@
             const moveDistanceY = touch.clientY - touchStartY;
             const threshold = 10;
 
-            // Reset all movement states
             leftPressed = false;
             rightPressed = false;
             upPressed = false;
@@ -349,14 +332,11 @@
             downPressed = false;
         }
 
-        // Initialize the game state
         function initGame() {
-            // Reset player position based on new canvas size
             player.x = canvas.width / 2 - player.width / 2;
             player.y = canvas.height - 30;
-            PLAYER_MAX_Y = canvas.height * 0.75; // Player cannot move above 75% of the screen height
+            PLAYER_MAX_Y = canvas.height * 0.75;
 
-            // Clear existing obstacles and bullets
             obstacles = [];
             bullets = [];
             score = 0;
@@ -365,7 +345,6 @@
             livesDisplay.textContent = `Lives: ${lives}`;
         }
 
-        // Draw the player
         function drawPlayer() {
             ctx.beginPath();
             ctx.rect(player.x, player.y, player.width, player.height);
@@ -374,7 +353,6 @@
             ctx.closePath();
         }
 
-        // Draw the obstacles
         function drawObstacles() {
             obstacles.forEach(obstacle => {
                 ctx.beginPath();
@@ -385,7 +363,6 @@
             });
         }
         
-        // Draw the bullets
         function drawBullets() {
             bullets.forEach(bullet => {
                 ctx.beginPath();
@@ -396,7 +373,6 @@
             });
         }
 
-        // Create a new bullet
         function shoot() {
             if (!gameActive) return;
             bullets.push({
@@ -409,7 +385,6 @@
             });
         }
         
-        // Check for collisions between player and obstacles
         function checkPlayerCollision() {
             for (let i = 0; i < obstacles.length; i++) {
                 const obs = obstacles[i];
@@ -419,24 +394,23 @@
                     player.y < obs.y + obs.height &&
                     player.y + player.height > obs.y
                 ) {
-                    // Collision detected
                     lives--;
                     livesDisplay.textContent = `Lives: ${lives}`;
                     if (lives > 0) {
-                        // Reset player position and clear obstacles, but continue game
                         obstacles = [];
                         player.x = canvas.width / 2 - player.width / 2;
                         player.y = canvas.height - 30;
                     } else {
                         endGame();
                     }
+                    // เราต้อง return true เพื่อบอกให้รู้ว่ามีการชนเกิดขึ้น
+                    // แต่เราจะจัดการผลลัพธ์ในฟังก์ชัน update แทน
                     return true;
                 }
             }
             return false;
         }
         
-        // Check for collisions between bullets and obstacles
         function checkBulletCollision() {
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const bullet = bullets[i];
@@ -448,30 +422,25 @@
                         bullet.y < obs.y + obs.height &&
                         bullet.y + bullet.height > obs.y
                     ) {
-                        // Collision detected, remove both and increase score
                         bullets.splice(i, 1);
                         obstacles.splice(j, 1);
-                        score += 100; // Increase score only for hitting an obstacle
+                        score += 100;
                         scoreDisplay.textContent = `Score: ${score}`;
-                        return; // Exit inner loop to prevent errors with modified array
+                        return;
                     }
                 }
             }
         }
 
-        // Game loop
         function update() {
             if (!gameActive) return;
 
-            // Clear the canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw game elements
             drawPlayer();
             drawObstacles();
             drawBullets();
 
-            // Update player position
             if (rightPressed && player.x < canvas.width - player.width) {
                 player.x += player.speed;
             }
@@ -485,32 +454,22 @@
                 player.y += player.speed;
             }
 
-            // Update obstacle positions
             obstacles.forEach(obstacle => {
                 obstacle.y += obstacle.speed;
             });
             
-            // Update bullet positions and remove off-screen bullets
             bullets = bullets.filter(bullet => bullet.y > 0);
             bullets.forEach(bullet => {
                 bullet.y -= bullet.speed;
             });
 
-            // Check for game conditions
+            // *** ส่วนที่แก้ไข ***
             checkBulletCollision();
-            if (checkPlayerCollision()) {
-                return;
-            }
+            checkPlayerCollision(); 
             
-            // Score no longer increases over time
-            // score += 1;
-            // scoreDisplay.textContent = `Score: ${score}`;
-
-            // Loop the animation
             animationFrameId = requestAnimationFrame(update);
         }
 
-        // End the game and display message
         function endGame() {
             gameActive = false;
             clearInterval(obstacleSpawnInterval);
@@ -519,7 +478,6 @@
             gameControls.classList.add('hidden');
             startButton.classList.remove('hidden');
 
-            // Update the message text to show the final score
             messageText.textContent = `คุณทำคะแนนได้ ${score} คะแนน`;
             
             messageButton.onclick = () => {
@@ -529,12 +487,10 @@
             };
         }
 
-        // Start the game
         function startGame() {
             startButton.classList.add('hidden');
             gameControls.classList.remove('hidden');
             gameActive = true;
-            // Spawn obstacles at a regular interval
             obstacleSpawnInterval = setInterval(() => {
                 obstacles.push({
                     x: Math.random() * (canvas.width - 20),
@@ -544,11 +500,10 @@
                     speed: obstacleProperties.speed,
                     color: obstacleProperties.color
                 });
-            }, 1000); // Spawn a new obstacle every 1 second
+            }, 1000);
             update();
         }
         
-        // Function to set canvas size and reset game on window resize
         function resizeCanvas() {
             const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.8, 500);
             canvas.width = size;
@@ -559,18 +514,15 @@
             }
         }
 
-        // Event listener for the start button
         startButton.addEventListener('click', () => {
             initGame();
             startGame();
         });
 
-        // Initial setup
         window.onload = function () {
             resizeCanvas();
         }
 
-        // Listen for window resize events to keep the game responsive
         window.addEventListener('resize', resizeCanvas);
     </script>
 </body>
