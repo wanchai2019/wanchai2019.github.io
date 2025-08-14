@@ -13,14 +13,40 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            background-color: transparent; /* ตั้งค่าให้พื้นหลัง body โปร่งใส */
         }
         body {
             font-family: 'Inter', sans-serif;
+            position: relative;
         }
-        canvas {
-            display: block;
-            margin: 0 auto;
+        /* Style for the game canvas container */
+        #phaser-canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* ให้ canvas อยู่ด้านหลัง UI */
         }
+        /* Phaser canvas settings for transparency */
+        #phaser-canvas-container canvas {
+            background-color: transparent;
+        }
+
+        /* --- UI and Controls Styling --- */
+        .ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            box-sizing: border-box;
+            z-index: 1; /* ให้ UI อยู่ด้านหน้า canvas */
+        }
+
         .boss-health-bar-container {
             width: 80%;
             height: 20px;
@@ -64,6 +90,7 @@
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
+            z-index: 2; /* ให้ปุ่มควบคุมอยู่ด้านหน้า UI อื่นๆ */
         }
         #left-button { grid-area: left; justify-self: start; align-self: center; }
         #right-button { grid-area: right; justify-self: end; align-self: center; }
@@ -97,59 +124,42 @@
         #shoot-button {
             background-color: #EF4444;
         }
-        /* เพิ่ม CSS สำหรับการแสดงผลแบบเต็มหน้าจอ */
-        #game-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-        .game-overlay {
+        #end-game-text {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none; /* เพื่อให้สามารถคลิกผ่านไปที่ canvas ได้ */
-            z-index: 1;
-        }
-        .game-ui {
-            pointer-events: auto; /* ให้องค์ประกอบ UI สามารถคลิกได้ */
-            margin-top: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: auto;
+            max-width: 400px;
+            padding: 2rem;
+            text-align: center;
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
-    <div id="game-container"></div>
-    <div class="game-overlay">
-        <div class="game-ui">
-            <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 dark:text-white text-center">เกมหัวใจกระพริบ</h1>
-            <div id="score-container" class="text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-300">
-                คะแนน: <span id="score-text">0</span>
-            </div>
-            <div id="boss-info" class="hidden flex-col items-center">
-                <span class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">พลังชีวิตบอส</span>
-                <div id="boss-health-bar-container" class="boss-health-bar-container">
-                    <div id="boss-health-bar" class="boss-health-bar"></div>
-                </div>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div id="phaser-canvas-container"></div>
+    
+    <div class="ui-container">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 dark:text-white text-center">เกมหัวใจกระพริบ</h1>
+        <div id="score-container" class="text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-300">
+            คะแนน: <span id="score-text">0</span>
+        </div>
+        <div id="boss-info" class="hidden flex-col items-center">
+            <span class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">พลังชีวิตบอส</span>
+            <div id="boss-health-bar-container" class="boss-health-bar-container">
+                <div id="boss-health-bar" class="boss-health-bar"></div>
             </div>
         </div>
-        <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
-            <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
-            <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
-            <button id="play-again-button" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full shadow-lg transition-transform transform active:scale-95">เล่นอีกครั้ง</button>
-        </div>
-        <div id="dialogue-box" class="dialogue-box"></div>
     </div>
     
+    <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
+        <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
+        <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
+        <button id="play-again-button" class="mt-4 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full shadow-lg transition-transform transform active:scale-95">เล่นอีกครั้ง</button>
+    </div>
+    <div id="dialogue-box" class="dialogue-box"></div>
+
     <!-- On-screen touch controls for mobile -->
     <div id="controls">
         <button id="left-button" class="control-button">
@@ -218,7 +228,7 @@
                 type: Phaser.AUTO,
                 scale: {
                     mode: Phaser.Scale.FIT,
-                    parent: 'game-container',
+                    parent: 'phaser-canvas-container',
                     autoCenter: Phaser.Scale.CENTER_BOTH,
                     width: window.innerWidth,
                     height: window.innerHeight,
@@ -351,6 +361,16 @@
             geminiDialogueButton.addEventListener('click', () => {
                 if (isBossActive) {
                     generateBossDialogue();
+                }
+            });
+            
+            // Handle window resize to re-scale the game
+            window.addEventListener('resize', () => {
+                gameInstance.scale.resize(window.innerWidth, window.innerHeight);
+                // Reposition the ground and other elements if needed
+                const ground = scene.physics.world.staticGroup.getChildren()[0];
+                if (ground) {
+                    ground.setPosition(scene.scale.width / 2, scene.scale.height - groundHeight / 2).setScale(scene.scale.width / 50, 1).refreshBody();
                 }
             });
         }
