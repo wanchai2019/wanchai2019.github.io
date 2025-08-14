@@ -2,42 +2,62 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>เกมหัวใจกระพริบ</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body, html {
+            overscroll-behavior: none;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
         body {
             font-family: 'Inter', sans-serif;
         }
-        #game-container {
-            width: 800px;
-            height: 600px;
-            background-color: #333;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        canvas {
+            display: block;
+            margin: 0 auto;
         }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="flex flex-col items-center space-y-4">
+    <div class="flex flex-col items-center space-y-4 max-w-full overflow-hidden">
         <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 dark:text-white text-center">เกมหัวใจกระพริบ</h1>
-        <div id="game-container"></div>
-        <div id="game-over-text" class="absolute hidden flex items-center justify-center w-[800px] h-[600px] z-10 text-white bg-black bg-opacity-70 rounded-xl">
-            <span class="text-5xl font-bold">GAME OVER</span>
+        <div id="game-container" class="relative"></div>
+        <div id="game-over-text" class="absolute hidden flex items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
+            <span class="text-3xl md:text-5xl font-bold">GAME OVER</span>
         </div>
+    </div>
+
+    <!-- On-screen touch controls for mobile -->
+    <div id="controls" class="absolute bottom-4 left-0 w-full flex justify-between px-4 z-20">
+        <button id="left-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+            <!-- Left arrow icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+            <!-- Up arrow icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button id="right-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+            <!-- Right arrow icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+        </button>
     </div>
 
     <!-- Phaser Library -->
     <script src="//cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.js"></script>
 
-    <!--
-        ข้อผิดพลาด "ReferenceError: Phaser is not defined" เกิดขึ้นเนื่องจากโค้ดเกมพยายาม
-        ทำงานก่อนที่สคริปต์ไลบรารี Phaser จะถูกโหลดเสร็จสมบูรณ์
-        เพื่อแก้ไขปัญหานี้ เราจะใช้แนวทางการตรวจสอบแบบ Polling ที่มีประสิทธิภาพยิ่งขึ้น
-        โค้ดนี้จะตรวจสอบว่ามีอ็อบเจกต์ Phaser อยู่หรือไม่เป็นระยะๆ และจะสร้างเกมก็ต่อเมื่อ
-        ไลบรารีโหลดเสร็จสมบูรณ์แล้วเท่านั้น ซึ่งจะช่วยแก้ปัญหาด้านเวลาได้อย่างแน่นอน
-    -->
+    <!-- Game logic script -->
     <script>
         // Global variables for the game
         let player;
@@ -48,74 +68,92 @@
         let enemies;
 
         function startGame() {
+            // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
             const config = {
                 type: Phaser.AUTO,
-                width: 800,
-                height: 600,
+                scale: {
+                    mode: Phaser.Scale.FIT,
+                    parent: 'game-container',
+                    autoCenter: Phaser.Scale.CENTER_BOTH,
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                },
                 backgroundColor: '#333',
-                // Set up Arcade Physics for the game
+                // ตั้งค่า Arcade Physics สำหรับเกม
                 physics: {
                     default: 'arcade',
                     arcade: {
                         gravity: { y: 300 },
-                        debug: false // Set to true to see hitboxes
+                        debug: false
                     }
                 },
-                // Define the scenes for the game
+                // กำหนด scenes สำหรับเกม
                 scene: {
                     preload: preload,
                     create: create,
                     update: update
-                },
-                // Specify the parent container for the game canvas
-                parent: 'game-container'
+                }
             };
-
             const game = new Phaser.Game(config);
         }
-
-        // Preload function to load game assets
+        
+        // ฟังก์ชัน preload เพื่อโหลด asset ของเกม
         function preload() {
-            // Load placeholder images
             this.load.image('player', 'https://placehold.co/100x100/A0E7E5/fff?text=Player');
             this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤');
             this.load.image('ground', 'https://placehold.co/100x30/28a745/fff?text=Ground');
             this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=Enemy');
         }
 
-        // Create function to set up the game state
+        // ฟังก์ชัน create เพื่อตั้งค่าสถานะเริ่มต้นของเกม
         function create() {
             scene = this;
 
-            // Create a static ground platform
+            // Create a static ground platform at the bottom of the screen
+            const groundHeight = 30;
             const ground = this.physics.add.staticGroup();
-            ground.create(400, 580, 'ground').setScale(2).refreshBody();
+            ground.create(this.scale.width / 2, this.scale.height - groundHeight / 2, 'ground')
+                  .setScale(this.scale.width / 50, 1)
+                  .refreshBody();
 
-            // Create the player sprite
-            player = this.physics.add.sprite(100, 450, 'player').setScale(0.5);
+            // สร้างสไปรท์ผู้เล่น
+            player = this.physics.add.sprite(this.scale.width / 4, this.scale.height - 100, 'player').setScale(0.5);
             player.setCollideWorldBounds(true);
             this.physics.add.collider(player, ground);
-
-            // Create a group for enemies
+            
+            // สร้างกลุ่มสำหรับศัตรู
             enemies = this.physics.add.group();
 
-            // Create multiple patrolling enemies
-            createEnemy(400, 500, 350, 450); // Enemy 1 patrols between x=350 and x=450
-            createEnemy(600, 500, 550, 750); // Enemy 2 patrols between x=550 and x=750
+            // สร้างศัตรูที่ลาดตระเวนหลายตัว
+            createEnemy(this.scale.width * 0.5, this.scale.height - 100, this.scale.width * 0.4, this.scale.width * 0.6);
+            createEnemy(this.scale.width * 0.7, this.scale.height - 100, this.scale.width * 0.6, this.scale.width * 0.9);
 
             this.physics.add.collider(enemies, ground);
-
-            // Set up collision detection between the player and enemies
             this.physics.add.overlap(player, enemies, handlePlayerEnemyCollision, null, this);
 
-            // Create keyboard input listeners
+            // สร้างตัวฟังการป้อนข้อมูลจากแป้นพิมพ์
             cursors = this.input.keyboard.createCursorKeys();
 
             // Initialize and display player hearts
             updateHearts();
+
+            // Mobile controls
+            const leftButton = document.getElementById('left-button');
+            const rightButton = document.getElementById('right-button');
+            const jumpButton = document.getElementById('jump-button');
+
+            leftButton.addEventListener('touchstart', () => player.isMovingLeft = true);
+            leftButton.addEventListener('touchend', () => player.isMovingLeft = false);
+            rightButton.addEventListener('touchstart', () => player.isMovingRight = true);
+            rightButton.addEventListener('touchend', () => player.isMovingRight = false);
+            jumpButton.addEventListener('touchstart', () => {
+                if (player.body.touching.down) {
+                    player.setVelocityY(-330);
+                }
+            });
         }
 
-        // Function to create a patrolling enemy
+        // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวน
         function createEnemy(x, y, minX, maxX) {
             const enemy = enemies.create(x, y, 'enemy').setScale(0.5);
             enemy.setCollideWorldBounds(true);
@@ -127,17 +165,25 @@
             return enemy;
         }
 
-        // Update function to run every frame
+        // ฟังก์ชัน update เพื่อรันทุกเฟรม
         function update() {
-            // Player movement control
+            // Player movement control from keyboard
             if (cursors.left.isDown) {
                 player.setVelocityX(-160);
             } else if (cursors.right.isDown) {
                 player.setVelocityX(160);
-            } else {
+            } else if (!player.isMovingLeft && !player.isMovingRight) {
                 player.setVelocityX(0);
             }
-            // Player jump control
+            
+            // Player movement control from touch
+            if (player.isMovingLeft) {
+                player.setVelocityX(-160);
+            } else if (player.isMovingRight) {
+                player.setVelocityX(160);
+            }
+
+            // Player jump control from keyboard
             if (cursors.up.isDown && player.body.touching.down) {
                 player.setVelocityY(-330);
             }
@@ -157,12 +203,10 @@
             });
         }
 
-        // Handles collision between player and enemy
+        // จัดการการชนกันระหว่างผู้เล่นและศัตรู
         function handlePlayerEnemyCollision(player, enemy) {
-            // Check if player is not invincible
             if (!player.invincible) {
                 loseHP();
-                // Make the player temporarily invincible and flash
                 player.invincible = true;
                 scene.tweens.add({
                     targets: player,
@@ -178,7 +222,7 @@
             }
         }
 
-        // Function to update the hearts display
+        // ฟังก์ชันเพื่ออัปเดตการแสดงผลหัวใจ
         function updateHearts() {
             hearts.forEach(h => h.destroy());
             hearts = [];
@@ -191,7 +235,7 @@
             }
         }
 
-        // Function to decrease player HP
+        // ฟังก์ชันเพื่อลด HP ของผู้เล่น
         function loseHP() {
             if (playerHP > 0) {
                 playerHP--;
@@ -202,7 +246,7 @@
             }
         }
 
-        // Function to handle the game over state
+        // ฟังก์ชันสำหรับจัดการสถานะ Game Over
         function gameOver() {
             document.getElementById('game-over-text').style.display = 'flex';
             player.setTint(0xff0000);
