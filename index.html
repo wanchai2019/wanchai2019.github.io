@@ -50,6 +50,53 @@
             display: none;
             z-index: 10;
         }
+        #controls {
+            display: grid;
+            grid-template-areas: "left jump right" "left shoot right";
+            grid-template-columns: 1fr auto 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+            box-sizing: border-box;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #left-button { grid-area: left; justify-self: start; align-self: center; }
+        #right-button { grid-area: right; justify-self: end; align-self: center; }
+        #jump-button { grid-area: jump; justify-self: center; align-self: end; }
+        #shoot-button { grid-area: shoot; justify-self: center; align-self: start; }
+        #gemini-dialogue-button-container {
+            grid-area: jump / 1 / shoot / 4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .control-button {
+            background-color: #6366F1;
+            color: white;
+            font-weight: bold;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+            transform: scale(1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+        }
+        .control-button:active {
+            transform: scale(0.95);
+        }
+        #shoot-button {
+            background-color: #EF4444;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
@@ -64,7 +111,7 @@
                 <div id="boss-health-bar" class="boss-health-bar"></div>
             </div>
         </div>
-        <div id="game-container" class="relative"></div>
+        <div id="game-container" class="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden"></div>
         <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
             <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
             <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
@@ -74,38 +121,32 @@
     </div>
 
     <!-- On-screen touch controls for mobile -->
-    <div id="controls" class="absolute bottom-4 left-0 w-full flex justify-between px-4 z-20">
-        <button id="left-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-            <!-- Left arrow icon -->
+    <div id="controls">
+        <button id="left-button" class="control-button">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </button>
-        <div class="flex flex-col space-y-2">
-            <div class="flex space-x-2">
-                <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-                    <!-- Up arrow icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-                <button id="shoot-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-                    <!-- Shooting icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                </button>
-            </div>
-            <button id="gemini-dialogue-button" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform transform active:scale-95 text-xs sm:text-sm">
-                ✨ ท้าทายบอส
-            </button>
-        </div>
-        <button id="right-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-            <!-- Right arrow icon -->
+        <button id="right-button" class="control-button">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
             </svg>
         </button>
+        <button id="jump-button" class="control-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button id="shoot-button" class="control-button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+        </button>
+        <div id="gemini-dialogue-button-container">
+            <button id="gemini-dialogue-button" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform transform active:scale-95 text-xs sm:text-sm">
+                ✨ ท้าทายบอส
+            </button>
+        </div>
     </div>
 
     <!-- Phaser Library -->
@@ -139,17 +180,19 @@
         let dialogueTimeout = null;
         let lastBossFired = 0; // To control boss's bullet firing rate
         let bossSpawned = false;
+        let gameInstance;
 
         function startGame() {
             // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
+            const gameContainer = document.getElementById('game-container');
             const config = {
                 type: Phaser.AUTO,
                 scale: {
-                    mode: Phaser.Scale.FIT,
+                    mode: Phaser.Scale.RESIZE,
                     parent: 'game-container',
                     autoCenter: Phaser.Scale.CENTER_BOTH,
-                    width: window.innerWidth,
-                    height: window.innerHeight,
+                    width: '100%',
+                    height: '100%'
                 },
                 backgroundColor: '#333',
                 // ตั้งค่า Arcade Physics สำหรับเกม
@@ -167,7 +210,7 @@
                     update: update
                 }
             };
-            const game = new Phaser.Game(config);
+            gameInstance = new Phaser.Game(config);
         }
         
         // ฟังก์ชัน preload เพื่อโหลด asset ของเกม
@@ -249,18 +292,24 @@
             const jumpButton = document.getElementById('jump-button');
             const shootButton = document.getElementById('shoot-button');
 
-            leftButton.addEventListener('touchstart', () => player.isMovingLeft = true);
-            leftButton.addEventListener('touchend', () => player.isMovingLeft = false);
-            rightButton.addEventListener('touchstart', () => player.isMovingRight = true);
-            rightButton.addEventListener('touchend', () => player.isMovingRight = false);
-            jumpButton.addEventListener('touchstart', () => {
+            // Using pointerdown/up for better touch responsiveness
+            leftButton.addEventListener('pointerdown', (e) => { e.preventDefault(); player.isMovingLeft = true; });
+            leftButton.addEventListener('pointerup', () => player.isMovingLeft = false);
+            leftButton.addEventListener('pointerleave', () => player.isMovingLeft = false);
+
+            rightButton.addEventListener('pointerdown', (e) => { e.preventDefault(); player.isMovingRight = true; });
+            rightButton.addEventListener('pointerup', () => player.isMovingRight = false);
+            rightButton.addEventListener('pointerleave', () => player.isMovingRight = false);
+
+            jumpButton.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
                 if (player.body.touching.down) {
                     player.setVelocityY(-330);
                 }
             });
             // Shoot button listener with cooldown
-            shootButton.addEventListener('touchstart', () => {
-                // Check for cooldown
+            shootButton.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
                 if (scene.time.now > lastPlayerFired + 500) {
                     shootBullet();
                     lastPlayerFired = scene.time.now;
@@ -522,12 +571,18 @@
             document.getElementById('end-game-text').style.display = 'flex';
             document.getElementById('end-game-title').textContent = title;
             document.getElementById('final-score').textContent = 'คะแนนสุดท้าย: ' + score;
-            player.setTint(0xff0000);
-            player.setVelocity(0, 0);
-            player.anims.stop();
-            player.body.enable = false;
             
-            // Check if boss exists before trying to access it
+            // Hide controls on game over
+            document.getElementById('controls').style.display = 'none';
+
+            // Check if player and boss exist before trying to access them
+            if (player) {
+                player.setTint(0xff0000);
+                player.setVelocity(0, 0);
+                player.anims.stop();
+                player.body.enable = false;
+            }
+            
             if (boss) {
                 boss.setVelocity(0,0);
                 boss.anims.stop();
