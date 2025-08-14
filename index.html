@@ -35,6 +35,21 @@
             background-color: #ff4136;
             transition: width 0.2s ease-in-out;
         }
+        .dialogue-box {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 80%;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #000;
+            border-radius: 1rem;
+            font-size: 1rem;
+            text-align: center;
+            display: none;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
@@ -54,6 +69,7 @@
             <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
             <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
         </div>
+        <div id="dialogue-box" class="dialogue-box"></div>
     </div>
 
     <!-- On-screen touch controls for mobile -->
@@ -64,18 +80,23 @@
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </button>
-        <div class="flex space-x-2">
-            <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-                <!-- Up arrow icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <button id="shoot-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-                <!-- Shooting icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
+        <div class="flex flex-col space-y-2">
+            <div class="flex space-x-2">
+                <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+                    <!-- Up arrow icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <button id="shoot-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+                    <!-- Shooting icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+            </div>
+            <button id="gemini-dialogue-button" class="hidden bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-transform transform active:scale-95 text-xs sm:text-sm">
+                ✨ ท้าทายบอส
             </button>
         </div>
         <button id="right-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
@@ -98,10 +119,11 @@
         let hearts = [];
         let scene;
         let enemies;
-        let bullets; // Group for bullets
+        let bullets; // Group for player's bullets
+        let bossBullets; // Group for boss's bullets
         let score = 0;
         let scoreText;
-        let lastFired = 0; // To control bullet firing rate
+        let lastPlayerFired = 0; // To control player's bullet firing rate
 
         // Boss-related variables
         let boss;
@@ -109,6 +131,11 @@
         let maxBossHP = 50;
         let bossHealthBar;
         let bossInfoContainer;
+        let geminiDialogueButton;
+        let dialogueBox;
+        let isBossActive = false;
+        let dialogueTimeout = null;
+        let lastBossFired = 0; // To control boss's bullet firing rate
 
         function startGame() {
             // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
@@ -147,8 +174,9 @@
             this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤️');
             this.load.image('ground', 'https://placehold.co/100x30/28a745/fff?text=Ground');
             this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=👹');
-            this.load.image('bullet', 'https://placehold.co/20x20/FFD966/000?text=✨');
+            this.load.image('player_bullet', 'https://placehold.co/20x20/FFD966/000?text=✨');
             this.load.image('boss', 'https://placehold.co/200x200/B22222/fff?text=BOSS');
+            this.load.image('boss_bullet', 'https://placehold.co/20x20/3A0CA3/fff?text=💀');
         }
 
         // ฟังก์ชัน create เพื่อตั้งค่าสถานะเริ่มต้นของเกม
@@ -158,6 +186,8 @@
             // Get references to HTML elements
             bossInfoContainer = document.getElementById('boss-info');
             bossHealthBar = document.getElementById('boss-health-bar');
+            geminiDialogueButton = document.getElementById('gemini-dialogue-button');
+            dialogueBox = document.getElementById('dialogue-box');
 
             // Create a static ground platform at the bottom of the screen
             const groundHeight = 30;
@@ -174,8 +204,10 @@
             // สร้างกลุ่มสำหรับศัตรู
             enemies = this.physics.add.group();
 
-            // สร้างกลุ่มสำหรับกระสุน
+            // สร้างกลุ่มสำหรับกระสุนของผู้เล่น
             bullets = this.physics.add.group();
+            // สร้างกลุ่มสำหรับกระสุนของบอส
+            bossBullets = this.physics.add.group();
 
             // สร้างศัตรูที่ลาดตระเวนหลายตัว
             createEnemy(this.scale.width * 0.5, this.scale.height - 100, this.scale.width * 0.4, this.scale.width * 0.6);
@@ -189,9 +221,15 @@
             this.physics.add.overlap(player, enemies, handlePlayerEnemyCollision, null, this);
             this.physics.add.overlap(player, boss, handlePlayerBossCollision, null, this);
             
-            // ตรวจจับการชนกันระหว่างกระสุนกับศัตรู
+            // ตรวจจับการชนกันระหว่างกระสุนของผู้เล่นกับศัตรู
             this.physics.add.overlap(bullets, enemies, handleBulletEnemyCollision, null, this);
             this.physics.add.overlap(bullets, boss, handleBulletBossCollision, null, this);
+            
+            // ตรวจจับการชนกันระหว่างกระสุนของบอสกับผู้เล่น
+            this.physics.add.overlap(player, bossBullets, handlePlayerBossBulletCollision, null, this);
+            this.physics.add.collider(bossBullets, ground, (bullet) => {
+                bullet.disableBody(true, true);
+            });
 
             // สร้างตัวฟังการป้อนข้อมูลจากแป้นพิมพ์
             cursors = this.input.keyboard.createCursorKeys();
@@ -220,15 +258,23 @@
             // Shoot button listener with cooldown
             shootButton.addEventListener('touchstart', () => {
                 // Check for cooldown
-                if (scene.time.now > lastFired + 500) {
+                if (scene.time.now > lastPlayerFired + 500) {
                     shootBullet();
-                    lastFired = scene.time.now;
+                    lastPlayerFired = scene.time.now;
+                }
+            });
+
+            // Gemini API button listener
+            geminiDialogueButton.addEventListener('click', () => {
+                if (isBossActive) {
+                    generateBossDialogue();
                 }
             });
         }
 
         // ฟังก์ชันสำหรับสร้างบอส
         function createBoss(x, y) {
+            isBossActive = true;
             boss = scene.physics.add.sprite(x, y, 'boss').setScale(0.8);
             boss.setCollideWorldBounds(true);
             boss.setBounce(0.2); // Boss will bounce slightly
@@ -238,8 +284,9 @@
             boss.speed = 80;
             boss.setVelocityX(boss.speed * boss.direction);
             
-            // Show the boss health bar
+            // Show the boss health bar and Gemini button
             bossInfoContainer.style.display = 'flex';
+            geminiDialogueButton.style.display = 'block';
         }
 
         // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวน
@@ -291,8 +338,8 @@
                 }
             });
 
-            // Boss patrolling logic
-            if (boss) {
+            // Boss patrolling and shooting logic
+            if (isBossActive && boss) {
                 if (boss.x <= boss.minX && boss.direction === -1) {
                     boss.direction = 1;
                     boss.setVelocityX(boss.speed);
@@ -301,17 +348,36 @@
                     boss.direction = -1;
                     boss.setVelocityX(-boss.speed);
                 }
+
+                // Boss shoots at the player every 2 seconds
+                if (scene.time.now > lastBossFired + 2000) {
+                    bossShoot();
+                    lastBossFired = scene.time.now;
+                }
             }
         }
         
-        // ฟังก์ชันสำหรับยิงกระสุน
+        // ฟังก์ชันสำหรับยิงกระสุนของผู้เล่น
         function shootBullet() {
-            const bullet = bullets.get(player.x, player.y);
+            const bullet = bullets.get(player.x, player.y, 'player_bullet');
             if (bullet) {
                 bullet.setActive(true);
                 bullet.setVisible(true);
                 bullet.body.allowGravity = false;
                 bullet.setVelocityX(400); // Speed of the bullet
+            }
+        }
+
+        // ฟังก์ชันสำหรับบอสยิงกระสุน
+        function bossShoot() {
+            const bullet = bossBullets.get(boss.x, boss.y, 'boss_bullet');
+            if (bullet) {
+                bullet.setActive(true);
+                bullet.setVisible(true);
+                bullet.body.allowGravity = false;
+
+                // Calculate velocity to shoot towards the player
+                scene.physics.moveToObject(bullet, player, 200);
             }
         }
 
@@ -353,7 +419,7 @@
             }
         }
 
-        // จัดการการชนกันระหว่างกระสุนและศัตรู
+        // จัดการการชนกันระหว่างกระสุนของผู้เล่นและศัตรู
         function handleBulletEnemyCollision(bullet, enemy) {
             bullet.disableBody(true, true);
             enemy.disableBody(true, true);
@@ -361,7 +427,7 @@
             scoreText.setText('คะแนน: ' + score);
         }
 
-        // จัดการการชนกันระหว่างกระสุนและบอส
+        // จัดการการชนกันระหว่างกระสุนของผู้เล่นและบอส
         function handleBulletBossCollision(bullet, boss) {
             bullet.disableBody(true, true);
             bossHP -= 1;
@@ -370,6 +436,26 @@
             if (bossHP <= 0) {
                 boss.disableBody(true, true);
                 winGame();
+            }
+        }
+
+        // จัดการการชนกันระหว่างกระสุนของบอสและผู้เล่น
+        function handlePlayerBossBulletCollision(player, bullet) {
+            bullet.disableBody(true, true);
+            if (!player.invincible) {
+                loseHP();
+                player.invincible = true;
+                scene.tweens.add({
+                    targets: player,
+                    alpha: { from: 1, to: 0.2 },
+                    yoyo: true,
+                    repeat: 5,
+                    duration: 100,
+                    onComplete: () => {
+                        player.alpha = 1;
+                        player.invincible = false;
+                    }
+                });
             }
         }
 
@@ -419,7 +505,59 @@
             if (boss) {
                 boss.setVelocity(0,0);
             }
+            isBossActive = false;
+            geminiDialogueButton.style.display = 'none';
         }
+        
+        // ฟังก์ชัน Gemini API สำหรับสร้างบทพูดของบอส
+        async function generateBossDialogue() {
+            geminiDialogueButton.disabled = true;
+            geminiDialogueButton.textContent = '...กำลังคิดอยู่';
+            
+            // Clear any previous dialogue timeout
+            if (dialogueTimeout) {
+                clearTimeout(dialogueTimeout);
+            }
+
+            try {
+                const prompt = "คุณคือบอสในวิดีโอเกมสไตล์ย้อนยุค ตอบกลับผู้เล่นด้วยคำพูดเยาะเย้ยสั้นๆ หนึ่งประโยคเพื่อท้าทายเขา ยกตัวอย่างเช่น 'เจ้าไม่มีทางเอาชนะข้าได้หรอก!' หรือ 'พลังของเจ้ามันกระจอกเกินไป!'. ตอบเป็นภาษาไทยเท่านั้น.";
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    dialogueBox.textContent = text;
+                    dialogueBox.style.display = 'block';
+
+                    // Hide the dialogue box after a few seconds
+                    dialogueTimeout = setTimeout(() => {
+                        dialogueBox.style.display = 'none';
+                    }, 5000);
+                } else {
+                    dialogueBox.textContent = "บอส: ข้าไม่มีอะไรจะพูดกับเจ้าในตอนนี้!";
+                    dialogueBox.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                dialogueBox.textContent = "บอส: ข้ากำลังยุ่งอยู่! ไปให้พ้น!";
+                dialogueBox.style.display = 'block';
+            } finally {
+                geminiDialogueButton.disabled = false;
+                geminiDialogueButton.textContent = '✨ ท้าทายบอส';
+            }
+        }
+
 
         // Poll for the Phaser object before starting the game
         const checkPhaser = setInterval(() => {
