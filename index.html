@@ -21,14 +21,38 @@
             display: block;
             margin: 0 auto;
         }
+        .boss-health-bar-container {
+            width: 80%;
+            height: 20px;
+            background-color: #555;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #333;
+            margin-top: 10px;
+        }
+        .boss-health-bar {
+            height: 100%;
+            background-color: #ff4136;
+            transition: width 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center min-h-screen p-4">
     <div class="flex flex-col items-center space-y-4 max-w-full overflow-hidden">
         <h1 class="text-3xl md:text-5xl font-extrabold text-gray-800 dark:text-white text-center">เกมหัวใจกระพริบ</h1>
+        <div id="score-container" class="text-xl md:text-2xl font-bold text-gray-700 dark:text-gray-300">
+            คะแนน: <span id="score-text">0</span>
+        </div>
+        <div id="boss-info" class="hidden flex-col items-center">
+            <span class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">พลังชีวิตบอส</span>
+            <div id="boss-health-bar-container" class="boss-health-bar-container">
+                <div id="boss-health-bar" class="boss-health-bar"></div>
+            </div>
+        </div>
         <div id="game-container" class="relative"></div>
-        <div id="game-over-text" class="absolute hidden flex items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
-            <span class="text-3xl md:text-5xl font-bold">GAME OVER</span>
+        <div id="end-game-text" class="absolute hidden flex flex-col items-center justify-center w-full h-full z-10 text-white bg-black bg-opacity-70 rounded-xl">
+            <span id="end-game-title" class="text-3xl md:text-5xl font-bold"></span>
+            <span id="final-score" class="text-xl md:text-3xl mt-4">คะแนนสุดท้าย: 0</span>
         </div>
     </div>
 
@@ -40,12 +64,20 @@
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
             </svg>
         </button>
-        <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
-            <!-- Up arrow icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-        </button>
+        <div class="flex space-x-2">
+            <button id="jump-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+                <!-- Up arrow icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <button id="shoot-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
+                <!-- Shooting icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </button>
+        </div>
         <button id="right-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-full shadow-lg transition-transform transform active:scale-95 flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20">
             <!-- Right arrow icon -->
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 20 20" fill="currentColor">
@@ -66,6 +98,17 @@
         let hearts = [];
         let scene;
         let enemies;
+        let bullets; // Group for bullets
+        let score = 0;
+        let scoreText;
+        let lastFired = 0; // To control bullet firing rate
+
+        // Boss-related variables
+        let boss;
+        let bossHP = 50;
+        let maxBossHP = 50;
+        let bossHealthBar;
+        let bossInfoContainer;
 
         function startGame() {
             // กำหนดค่าเกมแบบ Dynamic เพื่อรองรับหน้าจอที่แตกต่างกัน
@@ -99,16 +142,22 @@
         
         // ฟังก์ชัน preload เพื่อโหลด asset ของเกม
         function preload() {
-            // เปลี่ยนรูปภาพ placeholder เป็นภาพสไตล์การ์ตูนสำหรับผู้เล่น, ศัตรู และหัวใจ
+            // เปลี่ยนรูปภาพ placeholder เป็นภาพสไตล์การ์ตูนสำหรับผู้เล่น, ศัตรู, กระสุน และหัวใจ
             this.load.image('player', 'https://placehold.co/100x100/A0E7E5/fff?text=😊');
             this.load.image('heart', 'https://placehold.co/50x50/F85050/fff?text=❤️');
             this.load.image('ground', 'https://placehold.co/100x30/28a745/fff?text=Ground');
             this.load.image('enemy', 'https://placehold.co/100x100/FFD966/000?text=👹');
+            this.load.image('bullet', 'https://placehold.co/20x20/FFD966/000?text=✨');
+            this.load.image('boss', 'https://placehold.co/200x200/B22222/fff?text=BOSS');
         }
 
         // ฟังก์ชัน create เพื่อตั้งค่าสถานะเริ่มต้นของเกม
         function create() {
             scene = this;
+            
+            // Get references to HTML elements
+            bossInfoContainer = document.getElementById('boss-info');
+            bossHealthBar = document.getElementById('boss-health-bar');
 
             // Create a static ground platform at the bottom of the screen
             const groundHeight = 30;
@@ -125,15 +174,30 @@
             // สร้างกลุ่มสำหรับศัตรู
             enemies = this.physics.add.group();
 
+            // สร้างกลุ่มสำหรับกระสุน
+            bullets = this.physics.add.group();
+
             // สร้างศัตรูที่ลาดตระเวนหลายตัว
             createEnemy(this.scale.width * 0.5, this.scale.height - 100, this.scale.width * 0.4, this.scale.width * 0.6);
             createEnemy(this.scale.width * 0.7, this.scale.height - 100, this.scale.width * 0.6, this.scale.width * 0.9);
 
+            // สร้างบอส
+            createBoss(this.scale.width * 0.75, this.scale.height - 150);
+
             this.physics.add.collider(enemies, ground);
+            this.physics.add.collider(boss, ground);
             this.physics.add.overlap(player, enemies, handlePlayerEnemyCollision, null, this);
+            this.physics.add.overlap(player, boss, handlePlayerBossCollision, null, this);
+            
+            // ตรวจจับการชนกันระหว่างกระสุนกับศัตรู
+            this.physics.add.overlap(bullets, enemies, handleBulletEnemyCollision, null, this);
+            this.physics.add.overlap(bullets, boss, handleBulletBossCollision, null, this);
 
             // สร้างตัวฟังการป้อนข้อมูลจากแป้นพิมพ์
             cursors = this.input.keyboard.createCursorKeys();
+            
+            // Initial score text
+            scoreText = this.add.text(16, 16, 'คะแนน: 0', { fontSize: '20px', fill: '#fff' }).setScrollFactor(0);
 
             // Initialize and display player hearts
             updateHearts();
@@ -142,6 +206,7 @@
             const leftButton = document.getElementById('left-button');
             const rightButton = document.getElementById('right-button');
             const jumpButton = document.getElementById('jump-button');
+            const shootButton = document.getElementById('shoot-button');
 
             leftButton.addEventListener('touchstart', () => player.isMovingLeft = true);
             leftButton.addEventListener('touchend', () => player.isMovingLeft = false);
@@ -152,6 +217,29 @@
                     player.setVelocityY(-330);
                 }
             });
+            // Shoot button listener with cooldown
+            shootButton.addEventListener('touchstart', () => {
+                // Check for cooldown
+                if (scene.time.now > lastFired + 500) {
+                    shootBullet();
+                    lastFired = scene.time.now;
+                }
+            });
+        }
+
+        // ฟังก์ชันสำหรับสร้างบอส
+        function createBoss(x, y) {
+            boss = scene.physics.add.sprite(x, y, 'boss').setScale(0.8);
+            boss.setCollideWorldBounds(true);
+            boss.setBounce(0.2); // Boss will bounce slightly
+            boss.minX = scene.scale.width * 0.6;
+            boss.maxX = scene.scale.width * 0.9;
+            boss.direction = -1;
+            boss.speed = 80;
+            boss.setVelocityX(boss.speed * boss.direction);
+            
+            // Show the boss health bar
+            bossInfoContainer.style.display = 'flex';
         }
 
         // ฟังก์ชันสำหรับสร้างศัตรูที่ลาดตระเวน
@@ -202,6 +290,29 @@
                     enemy.setVelocityX(-enemy.speed);
                 }
             });
+
+            // Boss patrolling logic
+            if (boss) {
+                if (boss.x <= boss.minX && boss.direction === -1) {
+                    boss.direction = 1;
+                    boss.setVelocityX(boss.speed);
+                }
+                if (boss.x >= boss.maxX && boss.direction === 1) {
+                    boss.direction = -1;
+                    boss.setVelocityX(-boss.speed);
+                }
+            }
+        }
+        
+        // ฟังก์ชันสำหรับยิงกระสุน
+        function shootBullet() {
+            const bullet = bullets.get(player.x, player.y);
+            if (bullet) {
+                bullet.setActive(true);
+                bullet.setVisible(true);
+                bullet.body.allowGravity = false;
+                bullet.setVelocityX(400); // Speed of the bullet
+            }
         }
 
         // จัดการการชนกันระหว่างผู้เล่นและศัตรู
@@ -220,6 +331,45 @@
                         player.invincible = false;
                     }
                 });
+            }
+        }
+
+        // จัดการการชนกันระหว่างผู้เล่นและบอส
+        function handlePlayerBossCollision(player, boss) {
+            if (!player.invincible) {
+                loseHP();
+                player.invincible = true;
+                scene.tweens.add({
+                    targets: player,
+                    alpha: { from: 1, to: 0.2 },
+                    yoyo: true,
+                    repeat: 5,
+                    duration: 100,
+                    onComplete: () => {
+                        player.alpha = 1;
+                        player.invincible = false;
+                    }
+                });
+            }
+        }
+
+        // จัดการการชนกันระหว่างกระสุนและศัตรู
+        function handleBulletEnemyCollision(bullet, enemy) {
+            bullet.disableBody(true, true);
+            enemy.disableBody(true, true);
+            score += 10;
+            scoreText.setText('คะแนน: ' + score);
+        }
+
+        // จัดการการชนกันระหว่างกระสุนและบอส
+        function handleBulletBossCollision(bullet, boss) {
+            bullet.disableBody(true, true);
+            bossHP -= 1;
+            bossHealthBar.style.width = (bossHP / maxBossHP) * 100 + '%';
+
+            if (bossHP <= 0) {
+                boss.disableBody(true, true);
+                winGame();
             }
         }
 
@@ -242,18 +392,33 @@
                 playerHP--;
                 updateHearts();
                 if (playerHP <= 0) {
-                    gameOver();
+                    loseGame();
                 }
             }
         }
 
         // ฟังก์ชันสำหรับจัดการสถานะ Game Over
-        function gameOver() {
-            document.getElementById('game-over-text').style.display = 'flex';
+        function loseGame() {
+            endGame('GAME OVER');
+        }
+
+        // ฟังก์ชันสำหรับจัดการสถานะ Game Win
+        function winGame() {
+            endGame('YOU WIN!');
+        }
+
+        // ฟังก์ชันหลักสำหรับจบเกม
+        function endGame(title) {
+            document.getElementById('end-game-text').style.display = 'flex';
+            document.getElementById('end-game-title').textContent = title;
+            document.getElementById('final-score').textContent = 'คะแนนสุดท้าย: ' + score;
             player.setTint(0xff0000);
             player.setVelocity(0, 0);
             player.anims.stop();
             player.body.enable = false;
+            if (boss) {
+                boss.setVelocity(0,0);
+            }
         }
 
         // Poll for the Phaser object before starting the game
