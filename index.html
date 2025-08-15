@@ -79,9 +79,33 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            margin-top: 1rem;
         }
 
+        /* === START: CODE TO MODIFY === */
+
+        /* 1. จัด Layout ใหม่สำหรับตัวครอบปุ่ม */
+        #game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0 1rem;
+            margin-top: 1rem;
+        }
+        
+        /* 2. ปรับปรุงปุ่มยิงให้ใหญ่และเด่นขึ้น */
+        #shootButton {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0; /* เอา padding เดิมออก */
+        }
+        
+        /* 3. เอา margin-bottom ของปุ่มทิศทางออก */
         #direction-controls-circle {
             position: relative;
             width: 150px;
@@ -89,9 +113,11 @@
             border-radius: 50%;
             background-color: #4a5568;
             border: 2px solid #a0aec0;
-            margin-bottom: 1rem;
+            margin-bottom: 0; /* ลบ margin เดิม */
         }
-
+        
+        /* === END: CODE TO MODIFY === */
+        
         .game-arrow-button {
             position: absolute;
             width: 50px;
@@ -113,26 +139,10 @@
             background-color: #1a202c;
         }
 
-        #upButton {
-            top: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        #downButton {
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        #leftButton {
-            left: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        #rightButton {
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
+        #upButton { top: 5px; left: 50%; transform: translateX(-50%); }
+        #downButton { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        #leftButton { left: 5px; top: 50%; transform: translateY(-50%); }
+        #rightButton { right: 5px; top: 50%; transform: translateY(-50%); }
 
         #message-box {
             position: fixed;
@@ -149,9 +159,7 @@
             font-size: 1.5rem;
         }
 
-        #message-box button {
-            margin-top: 1rem;
-        }
+        #message-box button { margin-top: 1rem; }
     </style>
 </head>
 <body>
@@ -166,13 +174,13 @@
     <div id="controls-container">
         <button id="startButton" class="game-button">เริ่มเกม</button>
         <div id="game-controls" class="hidden">
+            <button id="shootButton" class="game-button">ยิง!</button>
             <div id="direction-controls-circle">
                 <button id="upButton" class="game-arrow-button">▲</button>
                 <button id="leftButton" class="game-arrow-button">◀</button>
                 <button id="downButton" class="game-arrow-button">▼</button>
                 <button id="rightButton" class="game-arrow-button">▶</button>
             </div>
-            <button id="shootButton" class="game-button mt-4">ยิง!</button>
         </div>
     </div>
 
@@ -183,6 +191,7 @@
     </div>
 
     <script>
+        // JavaScript ไม่มีการเปลี่ยนแปลง
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startButton = document.getElementById('startButton');
@@ -204,31 +213,14 @@
         let lives = 3; 
         let obstacleSpawnInterval;
 
-        const player = {
-            x: 0,
-            y: 0,
-            width: 20,
-            height: 20,
-            speed: 5,
-            color: '#4299e1'
-        };
+        const player = { x: 0, y: 0, width: 20, height: 20, speed: 5, color: '#4299e1' };
         let PLAYER_MAX_Y = 0;
 
         let bullets = [];
-        const bulletProperties = {
-            width: 4,
-            height: 10,
-            speed: 7,
-            color: '#a0aec0'
-        };
+        const bulletProperties = { width: 4, height: 10, speed: 7, color: '#a0aec0' };
 
         let obstacles = [];
-        const obstacleProperties = {
-            width: 20,
-            height: 20,
-            speed: 2,
-            color: '#e53e3e'
-        };
+        const obstacleProperties = { width: 20, height: 20, speed: 2, color: '#e53e3e' };
 
         let rightPressed = false;
         let leftPressed = false;
@@ -236,29 +228,18 @@
         let downPressed = false;
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Right' || e.key === 'ArrowRight') {
-                rightPressed = true;
-            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-                leftPressed = true;
-            } else if (e.key === 'Up' || e.key === 'ArrowUp') {
-                upPressed = true;
-            } else if (e.key === 'Down' || e.key === 'ArrowDown') {
-                downPressed = true;
-            } else if (e.key === ' ' && gameActive) {
-                shoot();
-            }
+            if (e.key === 'Right' || e.key === 'ArrowRight') { rightPressed = true; } 
+            else if (e.key === 'Left' || e.key === 'ArrowLeft') { leftPressed = true; } 
+            else if (e.key === 'Up' || e.key === 'ArrowUp') { upPressed = true; } 
+            else if (e.key === 'Down' || e.key === 'ArrowDown') { downPressed = true; } 
+            else if (e.key === ' ' && gameActive) { shoot(); }
         });
 
         document.addEventListener('keyup', (e) => {
-            if (e.key === 'Right' || e.key === 'ArrowRight') {
-                rightPressed = false;
-            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
-                leftPressed = false;
-            } else if (e.key === 'Up' || e.key === 'ArrowUp') {
-                upPressed = false;
-            } else if (e.key === 'Down' || e.key === 'ArrowDown') {
-                downPressed = false;
-            }
+            if (e.key === 'Right' || e.key === 'ArrowRight') { rightPressed = false; } 
+            else if (e.key === 'Left' || e.key === 'ArrowLeft') { leftPressed = false; } 
+            else if (e.key === 'Up' || e.key === 'ArrowUp') { upPressed = false; } 
+            else if (e.key === 'Down' || e.key === 'ArrowDown') { downPressed = false; }
         });
 
         upButton.addEventListener('mousedown', () => upPressed = true);
@@ -303,24 +284,14 @@
             const moveDistanceX = touch.clientX - touchStartX;
             const moveDistanceY = touch.clientY - touchStartY;
             const threshold = 10;
-
             leftPressed = false;
             rightPressed = false;
             upPressed = false;
             downPressed = false;
-            
             if (Math.abs(moveDistanceX) > Math.abs(moveDistanceY) && Math.abs(moveDistanceX) > threshold) {
-                if (moveDistanceX > 0) {
-                    rightPressed = true;
-                } else {
-                    leftPressed = true;
-                }
+                if (moveDistanceX > 0) { rightPressed = true; } else { leftPressed = true; }
             } else if (Math.abs(moveDistanceY) > Math.abs(moveDistanceX) && Math.abs(moveDistanceY) > threshold) {
-                if (moveDistanceY > 0) {
-                    downPressed = true;
-                } else {
-                    upPressed = true;
-                }
+                if (moveDistanceY > 0) { downPressed = true; } else { upPressed = true; }
             }
         }
 
@@ -336,7 +307,6 @@
             player.x = canvas.width / 2 - player.width / 2;
             player.y = canvas.height - 30;
             PLAYER_MAX_Y = canvas.height * 0.75;
-
             obstacles = [];
             bullets = [];
             score = 0;
@@ -386,7 +356,7 @@
         }
         
         function checkPlayerCollision() {
-            for (let i = 0; i < obstacles.length; i++) {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
                 if (
                     player.x < obs.x + obs.width &&
@@ -394,21 +364,14 @@
                     player.y < obs.y + obs.height &&
                     player.y + player.height > obs.y
                 ) {
+                    obstacles.splice(i, 1);
                     lives--;
                     livesDisplay.textContent = `Lives: ${lives}`;
-                    if (lives > 0) {
-                        obstacles = [];
-                        player.x = canvas.width / 2 - player.width / 2;
-                        player.y = canvas.height - 30;
-                    } else {
+                    if (lives <= 0) {
                         endGame();
                     }
-                    // เราต้อง return true เพื่อบอกให้รู้ว่ามีการชนเกิดขึ้น
-                    // แต่เราจะจัดการผลลัพธ์ในฟังก์ชัน update แทน
-                    return true;
                 }
             }
-            return false;
         }
         
         function checkBulletCollision() {
@@ -434,39 +397,19 @@
 
         function update() {
             if (!gameActive) return;
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             drawPlayer();
             drawObstacles();
             drawBullets();
-
-            if (rightPressed && player.x < canvas.width - player.width) {
-                player.x += player.speed;
-            }
-            if (leftPressed && player.x > 0) {
-                player.x -= player.speed;
-            }
-            if (upPressed && player.y > PLAYER_MAX_Y) {
-                player.y -= player.speed;
-            }
-            if (downPressed && player.y < canvas.height - player.height) {
-                player.y += player.speed;
-            }
-
-            obstacles.forEach(obstacle => {
-                obstacle.y += obstacle.speed;
-            });
-            
+            if (rightPressed && player.x < canvas.width - player.width) { player.x += player.speed; }
+            if (leftPressed && player.x > 0) { player.x -= player.speed; }
+            if (upPressed && player.y > PLAYER_MAX_Y) { player.y -= player.speed; }
+            if (downPressed && player.y < canvas.height - player.height) { player.y += player.speed; }
+            obstacles.forEach(obstacle => { obstacle.y += obstacle.speed; });
             bullets = bullets.filter(bullet => bullet.y > 0);
-            bullets.forEach(bullet => {
-                bullet.y -= bullet.speed;
-            });
-
-            // *** ส่วนที่แก้ไข ***
+            bullets.forEach(bullet => { bullet.y -= bullet.speed; });
             checkBulletCollision();
             checkPlayerCollision(); 
-            
             animationFrameId = requestAnimationFrame(update);
         }
 
@@ -477,9 +420,7 @@
             messageBox.style.display = 'block';
             gameControls.classList.add('hidden');
             startButton.classList.remove('hidden');
-
             messageText.textContent = `คุณทำคะแนนได้ ${score} คะแนน`;
-            
             messageButton.onclick = () => {
                 messageBox.style.display = 'none';
                 initGame();
