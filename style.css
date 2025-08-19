@@ -1,14 +1,168 @@
-body {
-    margin: 0;
-    background: #222;
-    color: white;
-    font-family: sans-serif;
-    text-align: center;
+body { 
+    background-color: #1a202c; 
+    color: #e2e8f0; 
+    font-family: 'Inter', sans-serif; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    margin: 0; 
+    flex-direction: column; 
+    padding: 1rem; 
 }
 
-#game-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 90vh;
+/* === Title Screen Styles === */
+
+#loading-message {
+    margin-top: 1rem;
+}
+
+/* === Game Container & Canvas === */
+#game-container { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    background-color: #2d3748; 
+    padding: 1rem; 
+    border-radius: 1rem; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+    width: 100%; 
+    max-width: 500px; 
+}
+canvas { 
+    background-color: #4a5568; 
+    border-radius: 0.5rem; 
+    border: 2px solid #a0aec0; 
+    touch-action: none; 
+    width: 100%; 
+    height: auto; 
+}
+
+/* === Info Panel (Scores) === */
+#info-panel { 
+    display: flex; 
+    justify-content: space-between;
+    width: 100%; 
+    margin-top: 1rem; 
+    padding: 0 0.5rem; 
+}
+#info-panel h2 {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 700; /* font-bold */
+}
+#high-score-display {
+    color: #f6e05e;
+}
+#score-display { 
+    color: #48bb78; 
+}
+#lives-display { 
+    color: #ef4444; 
+}
+
+/* === Controls === */
+#controls-container { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    width: 100%; 
+}
+#game-controls { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    width: 100%; 
+    padding: 0 1rem; 
+    margin-top: 1rem; 
+}
+#direction-controls-circle { 
+    position: relative; 
+    width: 150px; 
+    height: 150px; 
+    border-radius: 50%; 
+    background-color: #4a5568; 
+    border: 2px solid #a0aec0; 
+    margin-bottom: 0; 
+}
+
+/* === Buttons === */
+.game-button { 
+    padding: 0.75rem 1.5rem; 
+    font-size: 1rem; 
+    font-weight: 600; 
+    color: white; 
+    background-image: linear-gradient(to right, #4c51bf, #6b46c1); 
+    border: none; 
+    border-radius: 9999px; 
+    cursor: pointer; 
+    transition: all 0.2s ease-in-out; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}
+.game-button:hover { 
+    transform: translateY(-2px); 
+    background-image: linear-gradient(to right, #6b46c1, #4c51bf); 
+}
+#shootButton { 
+    width: 120px; 
+    height: 120px; 
+    border-radius: 50%; 
+    font-size: 1.5rem; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    padding: 0; 
+}
+.game-arrow-button { 
+    position: absolute; 
+    width: 50px; 
+    height: 50px; 
+    background-color: #2d3748; 
+    color: white; 
+    font-size: 1.5rem; 
+    border: none; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: background-color 0.2s ease-in-out; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+}
+.game-arrow-button:active { 
+    background-color: #1a202c; 
+}
+#upButton { top: 5px; left: 50%; transform: translateX(-50%); }
+#downButton { bottom: 5px; left: 50%; transform: translateX(-50%); }
+#leftButton { left: 5px; top: 50%; transform: translateY(-50%); }
+#rightButton { right: 5px; top: 50%; transform: translateY(-50%); }
+
+/* === Message Box (Game Over) === */
+#message-box { 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    background-color: #2d3748; 
+    padding: 2rem 3rem; 
+    border-radius: 1rem; 
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+    display: none; 
+    z-index: 10; 
+    text-align: center; 
+}
+#message-box h2 {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 700; /* font-bold */
+    margin-bottom: 1rem; /* mb-4 */
+}
+#message-box p {
+    font-size: 1.5rem;
+}
+#message-box button { 
+    margin-top: 1rem; 
+}
+
+/* === Utility Class === */
+.hidden {
+    display: none !important;
 }
