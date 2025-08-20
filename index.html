@@ -37,5 +37,65 @@
     </div>
 
     <script src="script.js"></script>
+    <!-- ส่วนท้าย Footer -->
+  <footer style="margin-top:30px; padding:20px; background:#111; color:white;">
+    <p id="visitorCount"></p>
+
+    <div id="rating" style="margin-top:10px;">
+      
+      <span class="star" data-value="1">★</span>
+      <span class="star" data-value="2">★</span>
+      <span class="star" data-value="3">★</span>
+      <span class="star" data-value="4">★</span>
+      <span class="star" data-value="5">★</span>
+      <p id="ratingText" style="margin-top:5px; color:gold;"></p>
+    </div>
+  </footer>
+
+  <style>
+    .star {
+      font-size: 30px;
+      cursor: pointer;
+      color: gray;
+    }
+    .star.selected {
+      color: gold;
+    }
+  </style>
+
+  <script>
+    // ---- Visitor Counter ----
+    let count = localStorage.getItem("visitorCount") || 0;
+    count++;
+    localStorage.setItem("visitorCount", count);
+    document.getElementById("visitorCount").textContent = "Visitors: " + count;
+
+    // ---- Star Rating ----
+    const stars = document.querySelectorAll(".star");
+    const ratingText = document.getElementById("ratingText");
+    let savedRating = localStorage.getItem("gameRating") || 0;
+
+    function highlightStars(rating) {
+      stars.forEach(star => {
+        star.classList.remove("selected");
+        if (star.dataset.value <= rating) {
+          star.classList.add("selected");
+        }
+      });
+      if (rating > 0) ratingText.textContent = "Rate this Game: " + rating + " Stars";
+      else ratingText.textContent = "";
+    }
+
+    stars.forEach(star => {
+      star.addEventListener("click", () => {
+        let rating = star.dataset.value;
+        localStorage.setItem("gameRating", rating);
+        highlightStars(rating);
+      });
+    });
+
+    // โหลดค่าที่เคยให้ไว้
+    if (savedRating > 0) highlightStars(savedRating);
+  </script>
 </body>
 </html>
