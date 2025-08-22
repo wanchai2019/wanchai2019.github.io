@@ -20,7 +20,7 @@
     <div id="controls-container">
         <button id="startButton" class="game-button">Start</button>
         <br>
-        <a href="https://wanchai2019.github.io/my_awesome-game/index.html" class="game-button"><button id="startButton">Home</button></a>
+        <a href="index.html" class="game-button"><button id="startButton">Home</button></a>
         <div id="game-controls" class="hidden">
             <div id="direction-controls-circle">
                 <button id="upButton" class="game-arrow-button">▲</button>
@@ -33,13 +33,13 @@
     </div>
 
     <div id="message-box">
-        <h2>Game Over !!!</h2>
-        <p id="message-text"></p>
-        <button id="message-button" class="game-button">Play again</button>
+      <h2 id="message-title"></h2> <p id="message-text"></p>
+      <button id="message-button" class="game-button">Play again</button>
     </div>
 
     <script src="script.js"></script>
-<!-- ส่วนท้าย Footer -->
+    
+    <!-- ส่วนท้าย Footer -->
   <footer style="margin-top:30px; padding:20px; background:#111; color:white;">
     <p id="visitorCount"></p>
 
@@ -98,8 +98,6 @@
 
     // โหลดค่าที่เคยให้ไว้
     if (savedRating > 0) highlightStars(savedRating);
-  </script>    
+  </script>
 </body>
 </html>
-
-
