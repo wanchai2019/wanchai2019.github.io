@@ -40,19 +40,19 @@ function loadImage(src) {
 }
 
 const imageSources = {
-    player: 'img/sprite.png',
-    bg: 'img/bg.jpg',
-    enemy1: 'img/enemy1.png',
-    enemy2: 'img/enemy2.png',
-    enemy3: 'img/enemy3.png',
-    shield: 'img/shield.png',
-    rapidFire: 'img/rapid-fire.png',
-    bullet: 'img/fire.png',
-    bulletRapid: 'img/fire2.png',
-    explosion: 'img/boom.png',
-    boss: 'img/boss.png',
-    bossGun: 'img/shootboss.png', // NEW: เพิ่ม path ของภาพปืนยิงบอส
-    gunufo: 'img/gunufo.png'
+    player: './img/sprite.png',
+    bg: './img/bg.jpg',
+    enemy1: './img/enemy1.png',
+    enemy2: './img/enemy2.png',
+    enemy3: './img/enemy3.png',
+    shield: './img/shield.png',
+    rapidFire: './img/rapid-fire.png',
+    bullet: './img/fire.png',
+    bulletRapid: './img/fire2.png',
+    explosion: './img/boom.png',
+    boss: './img/boss.png',
+    bossGun: './img/shootboss.png', // NEW: เพิ่ม path ของภาพปืนยิงบอส
+    gunufo: './img/gunufo.png'
 };
 
 Promise.all([
@@ -779,3 +779,4 @@ window.onload = function () {
     loadHighScore();
 };
 window.addEventListener('resize', resizeCanvas);
+
