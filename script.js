@@ -27,6 +27,7 @@ const images = {
     explosion: null,
     boss: null,
     bossGun: null, // NEW: เพิ่มภาพไอเท็มและกระสุนปืนยิงบอส
+    gunufo: null
 };
 
 function loadImage(src) {
@@ -51,6 +52,7 @@ const imageSources = {
     explosion: 'img/boom.png',
     boss: 'img/boss.png',
     bossGun: 'img/shootboss.png', // NEW: เพิ่ม path ของภาพปืนยิงบอส
+    gunufo: 'img/gunufo.png'
 };
 
 Promise.all([
@@ -65,8 +67,9 @@ Promise.all([
     loadImage(imageSources.bulletRapid),
     loadImage(imageSources.explosion),
     loadImage(imageSources.boss),
-    loadImage(imageSources.bossGun), // NEW: โหลดภาพปืนยิงบอส
-]).then(([playerImg, bgImg, enemy1Img, enemy2Img, enemy3Img, shieldImg, rapidFireImg, bulletImg, bulletRapidImg, explosionImg, bossImg, bossGunImg]) => {
+    loadImage(imageSources.bossGun),
+    loadImage(imageSources.gunufo) // ตัวสุดท้าย
+]).then(([playerImg, bgImg, enemy1Img, enemy2Img, enemy3Img, shieldImg, rapidFireImg, bulletImg, bulletRapidImg, explosionImg, bossImg, bossGunImg, gunufoImg]) => { // เพิ่มตัวแปร gunufoImg
     images.player = playerImg;
     images.bg = bgImg;
     images.enemies = [enemy1Img, enemy2Img, enemy3Img];
@@ -76,7 +79,8 @@ Promise.all([
     images.bulletRapid = bulletRapidImg;
     images.explosion = explosionImg;
     images.boss = bossImg;
-    images.bossGun = bossGunImg; // NEW: กำหนดค่าภาพปืนยิงบอส
+    images.bossGun = bossGunImg;
+    images.gunufo = gunufoImg;
 
     console.log("All images loaded successfully.");
     startButton.disabled = false;
@@ -98,6 +102,7 @@ backgroundMusic.loop = true;
 const playerHitSound = new Audio('sound/spritexpo.mp3');
 const powerUpSound = new Audio('sound/powerup.mp3');
 const bossGunSound = new Audio('sound/gunboss.mp3'); // NEW: เพิ่มเสียงปืนยิงบอส
+const bossBulletSound = new Audio('sound/soundgunufo.mp3');
 
 // ============== GAME STATE & VARIABLES ==============
 let gameActive = false;
@@ -198,12 +203,13 @@ function initGame() {
     if (boss.shootInterval) clearInterval(boss.shootInterval);
     player.isShielded = false;
     player.rapidFireActive = false;
-    player.hasBossGun = false; // NEW
+    player.hasBossGun = false;
     canShoot = true;
     clearTimeout(rapidFireTimeout);
-    clearTimeout(bossGunTimeout); // NEW
+    clearTimeout(bossGunTimeout);
     score = 0;
-    lives = 3;
+    // ลบบรรทัดนี้ออก
+    // lives = 3; 
     obstacleProperties.speed = 2;
     spawnRate = 1000;
     difficultyThreshold = 1000;
@@ -296,16 +302,20 @@ function spawnBoss() {
     setTimeout(() => {
         boss.isEntering = false;
         boss.shootInterval = setInterval(() => {
-            if (isBossActive) {
-                bossBullets.push({
-                    x: boss.x + boss.width / 2 - 5,
-                    y: boss.y + boss.height,
-                    width: 10,
-                    height: 10,
-                    speed: 4
-                });
-            }
-        }, 1500);
+    if (isBossActive) {
+        bossBullets.push({
+            x: boss.x + boss.width / 2 - 10, // ปรับให้ตรงกลาง boss
+            y: boss.y + boss.height,
+            width: 20,
+            height: 20,
+            speed: 4
+        });
+        // เล่นเสียงทุกครั้งที่ spawn bullet
+        bossBulletSound.currentTime = 0;
+        bossBulletSound.play();
+    }
+}, 1500);
+
         // NEW: เริ่มสร้าง Power-up เฉพาะตอนสู้บอส
         powerUpSpawnInterval = setInterval(spawnPowerUp, 8000); // 8 วินาทีเกิดที
     }, 2000);
@@ -352,26 +362,56 @@ function drawBossHealthBar() {
     ctx.strokeRect(x, y, barWidth, barHeight);
 }
 function drawBossBullets() {
-    ctx.fillStyle = 'yellow';
     bossBullets.forEach(bBullet => {
-        ctx.fillRect(bBullet.x, bBullet.y, bBullet.width, bBullet.height);
+        if (images.gunufo) {
+            ctx.drawImage(images.gunufo, bBullet.x, bBullet.y, 20, 20);
+        } else {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(bBullet.x, bBullet.y, bBullet.width, bBullet.height);
+        }
     });
 }
+
 function defeatBoss() {
     isBossActive = false;
     clearInterval(boss.shootInterval);
-    clearInterval(powerUpSpawnInterval); // หยุดสร้าง power up ของบอส
+    clearInterval(powerUpSpawnInterval);
     boss = {};
     bossBullets = [];
     
     spawnExplosion(player.x - 25, player.y - 100, 'large');
     score += 2000;
     scoreDisplay.textContent = `Score: ${score}`;
+
+    lives = 1; 
     
-    nextBossScore += BOSS_SPAWN_SCORE + 2000;
+    gameActive = false;
+    cancelAnimationFrame(animationFrameId);
+    backgroundMusic.pause();
+    messageBox.style.display = 'block';
+    gameControls.classList.add('hidden');
+    startButton.classList.remove('hidden');
+    checkAndSaveHighScore();
     
-    startGameSpawners();
+    // ตั้งค่าข้อความเมื่อชนะ
+    document.getElementById('message-title').textContent = 'You Win!'; 
+    messageText.textContent = `You have defeated the boss! Your score: ${score}`;
+
+    messageButton.textContent = 'Continue'; 
+    messageButton.onclick = () => {
+        messageBox.style.display = 'none';
+        gameActive = true;
+        
+        nextBossScore += BOSS_SPAWN_SCORE + 2000;
+        obstacleProperties.speed += 0.5;
+        if (spawnRate > 400) spawnRate -= 100;
+        
+        startGameSpawners();
+        backgroundMusic.play();
+        update();
+    };
 }
+
 function startGameSpawners() {
     obstacleProperties.speed += 0.2;
     if (spawnRate > 400) spawnRate -= 50;
@@ -478,13 +518,18 @@ function checkPlayerCollision() {
             return;
         }
     }
+    // โค้ดที่ถูกต้อง (ไม่ซ้ำซ้อน)
     if (isBossActive && player.x < boss.x + boss.width && player.x + player.width > boss.x && player.y < boss.y + boss.height && player.y + player.height > boss.y) {
+        if (boss.hp <= 0) {
+            return;
+        }
         spawnExplosion(player.x, player.y, 'large');
         handlePlayerHit();
         handlePlayerHit();
         return;
     }
 }
+
 function handlePlayerHit() {
     if (player.isShielded) {
         player.isShielded = false;
@@ -643,7 +688,7 @@ function endGame() {
     clearInterval(powerUpSpawnInterval);
     if (boss.shootInterval) clearInterval(boss.shootInterval);
     clearTimeout(rapidFireTimeout);
-    clearTimeout(bossGunTimeout); // NEW
+    clearTimeout(bossGunTimeout);
     cancelAnimationFrame(animationFrameId);
     messageBox.style.display = 'block';
     gameControls.classList.add('hidden');
@@ -651,13 +696,19 @@ function endGame() {
     backgroundMusic.pause();
     backgroundMusic.currentTime = 0;
     checkAndSaveHighScore();
-    messageText.textContent = `Your Score ${score} Score`;
+    
+    // ตั้งค่าข้อความเมื่อแพ้
+    document.getElementById('message-title').textContent = 'Game Over !!!'; 
+    
+    // ข้อความแสดงคะแนนเมื่อแพ้
+    messageText.textContent = `Your Score ${score}`;
     messageButton.onclick = () => {
         messageBox.style.display = 'none';
         initGame();
         startGame();
     };
 }
+
 function spawnObstacle() {
     const randomEnemyImg = images.enemies[Math.floor(Math.random() * images.enemies.length)];
     const isTough = Math.random() < 0.25;
@@ -678,10 +729,15 @@ function startGame() {
     startButton.classList.add('hidden');
     gameControls.classList.remove('hidden');
     gameActive = true;
+
+    // เพิ่มบรรทัดนี้
+    lives = 3;
+    livesDisplay.textContent = `Lives: ${lives}`;
+
     startGameSpawners();
     backgroundMusic.play();
     update();
-} 
+}
 function resizeCanvas() { 
     const oldWidth = canvas.width;
     const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.8, 500); 
